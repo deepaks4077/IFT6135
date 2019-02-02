@@ -55,7 +55,7 @@ if params.use_gpu:
 else:
     params.device = torch.device('cpu')
 
-logging.info('Using', params.device)
+logging.info(params.device)
 
 model = initialize_model(params).to(device=params.device)
 
