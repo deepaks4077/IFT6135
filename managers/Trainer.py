@@ -25,6 +25,9 @@ class Trainer():
         self.last_acc = 0
 
     def one_step(self, batch):
+        batch[0] = batch[0].to(device=self.params.device)
+        batch[1] = batch[1].to(device=self.params.device)
+
         loss = self.model(batch)
 
         self.optimizer.zero_grad()

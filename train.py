@@ -47,42 +47,47 @@ logging.basicConfig(level=logging.INFO)
 initialize_experiment(params)
 
 params.device = None
-if not params.disable_cuda and torch.cuda.is_available():
+
+params.use_gpu = not params.disable_cuda and torch.cuda.is_available()
+
+if params.use_gpu:
     params.device = torch.device('cuda')
 else:
     params.device = torch.device('cpu')
 
-model = initialize_model(params)
+logging.info('Using', params.device)
+
+model = initialize_model(params).to(device=params.device)
 
 train_data_loader, valid_data_loader = get_train_valid_loader(DATA_PATH,
                                                               params.batch_size,
                                                               valid_size=0.1,
                                                               shuffle=True,
                                                               num_workers=4,
-                                                              pin_memory=False)
+                                                              pin_memory=params.use_gpu)
 
 test_data_loader = get_test_loader(DATA_PATH,
                                    params.batch_size,
                                    shuffle=True,
                                    num_workers=4,
-                                   pin_memory=False)
+                                   pin_memory=params.use_gpu)
 
 trainer = Trainer(params, model, train_data_loader)
-evaluator = Evaluator(params, model, valid_data_loader)
+validator = Evaluator(params, model, valid_data_loader)
 tester = Evaluator(params, model, test_data_loader)
 
 for e in range(params.nEpochs):
     tic = time.time()
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
-        toc = time.time()
+    toc = time.time()
 
     logging.info('Epoch %d with loss: %f in %f'
                  % (e, loss, toc - tic))
 
     # pdb.set_trace()
     if (e + 1) % params.eval_every == 0:
-        log_data = evaluator.get_log_data()
+        log_data = validator.get_log_data()
         logging.info('Performance:' + str(log_data))
         to_continue = trainer.save_model(log_data)
 

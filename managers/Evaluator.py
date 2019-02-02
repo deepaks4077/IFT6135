@@ -12,6 +12,10 @@ class Evaluator():
         acc = torch.empty(len(self.data_loader))
         for i, batch in enumerate(self.data_loader):
             # pdb.set_trace()
+
+            batch[0] = batch[0].to(device=self.params.device)
+            batch[1] = batch[1].to(device=self.params.device)
+
             scores = self.model.get_score(batch)
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == batch[1]).double())
