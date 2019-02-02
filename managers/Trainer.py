@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import logging
 import os
+import pdb
 
 
 class Trainer():
@@ -10,7 +11,10 @@ class Trainer():
         self.model = model
         self.data_loader = data_loader
 
-        self.model_params = model.parameters()
+        self.model_params = list(model.parameters())
+
+        logging.info('Total number of parameters: %d' % sum(map(lambda x: x.numel(), self.model_params)))
+
         if params.optimizer == "SGD":
             self.optimizer = optim.SGD(self.model_params, lr=params.lr, momentum=params.momentum)
         if params.optimizer == "Adam":
