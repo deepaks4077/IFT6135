@@ -20,9 +20,9 @@ parser.add_argument("--nEpochs", type=int, default=10,
                     help="Learning rate of the optimizer")
 parser.add_argument("--batch_size", type=int, default=128,
                     help="Batch size")
-parser.add_argument("--eval_every", type=int, default=25,
+parser.add_argument("--eval_every", type=int, default=5,
                     help="Interval of epochs to evaluate the model?")
-parser.add_argument("--save_every", type=int, default=50,
+parser.add_argument("--save_every", type=int, default=10,
                     help="Interval of epochs to save a checkpoint of the model?")
 
 parser.add_argument("--patience", type=int, default=10,
@@ -70,8 +70,8 @@ for e in range(params.nEpochs):
     for inputs, labels, ids in train_data_loader:
         # pdb.set_trace()
         loss = trainer.one_step(inputs, labels)
-        logging.info('loss: %f '
-                     % loss)
+        # logging.info('loss: %f '
+        #              % loss)
     toc = time.time()
 
     logging.info('Epoch %d with loss: %f in %f'
