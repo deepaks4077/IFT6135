@@ -49,7 +49,4 @@ _, _, test_data_loader, _, idx_to_class = data_loader(train_to_valid_ratio=0.8,
 
 tester = Evaluator(params, model, test_data_loader, idx_to_class)
 
-test_log = tester.get_log_data()
-logging.info('Test performance:' + str(test_log))
-
 tester.save_predictions(params.output_name)

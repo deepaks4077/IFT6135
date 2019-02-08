@@ -18,7 +18,7 @@ class Trainer():
         logging.info('Total number of parameters: %d' % sum(map(lambda x: x.numel(), self.model_params)))
 
         if params.optimizer == "SGD":
-            self.optimizer = optim.SGD(self.model_params, lr=params.lr, momentum=params.momentum)
+            self.optimizer = optim.SGD(self.model_params, lr=params.lr)
 
         self.bad_count = 0
         self.best_acc = 0
