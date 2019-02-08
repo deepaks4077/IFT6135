@@ -18,7 +18,7 @@ parser.add_argument("--experiment_name", type=str, default="default",
 
 parser.add_argument("--nEpochs", type=int, default=10,
                     help="Learning rate of the optimizer")
-parser.add_argument("--batch_size", type=int, default=128,
+parser.add_argument("--batch_size", type=int, default=32,
                     help="Batch size")
 parser.add_argument("--eval_every", type=int, default=5,
                     help="Interval of epochs to evaluate the model?")

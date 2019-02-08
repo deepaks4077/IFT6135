@@ -29,7 +29,7 @@ class Evaluator():
 
     def save_predictions(self, outfile_name):
 
-        self.model.eval()
+        # self.model.eval()
 
         ids_and_predictions = dict()
 
