@@ -18,21 +18,19 @@ class Trainer():
         logging.info('Total number of parameters: %d' % sum(map(lambda x: x.numel(), self.model_params)))
 
         if params.optimizer == "SGD":
-            self.optimizer = optim.SGD(self.model_params, lr=params.lr, momentum=params.momentum)
-        if params.optimizer == "Adam":
-            self.optimizer = optim.Adam(self.model_params, lr=params.lr)
+            self.optimizer = optim.SGD(self.model_params, lr=params.lr)
 
         self.bad_count = 0
         self.best_acc = 0
         self.last_acc = 0
 
-    def one_step(self, batch):
-        batch[0] = batch[0].to(device=self.params.device)
-        batch[1] = batch[1].to(device=self.params.device)
+    def one_step(self, inputs, labels):
+        inputs = inputs.to(device=self.params.device)
+        labels = labels.to(device=self.params.device)
 
-        logits = self.model(batch)
+        logits = self.model(inputs)
 
-        loss = self.criterion(logits, batch[1])
+        loss = self.criterion(logits, labels)
 
         self.optimizer.zero_grad()
         loss.backward()

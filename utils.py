@@ -9,6 +9,7 @@ import scipy.misc
 from io import BytesIO
 
 from torchvision import datasets
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -67,7 +68,7 @@ def initialize_model(params):
         model = torch.load(os.path.join(params.exp_dir, 'best_model.pth'))
     else:
         logging.info('No existing model found. Initializing new model..')
-        model = CNNModel(params)
+        model = CNNModel()
 
     return model
 
@@ -132,110 +133,77 @@ class Logger(object):
         self.writer.add_summary(summary, step)
         self.writer.flush()
 
-# Code referenced from https://gist.github.com/kevinzakka/d33bf8d6c7f06a9d8c76d97a7879f5cb
+
+class ImageFolderWithPaths(datasets.ImageFolder):
+    # Extends torchvision.datasets.ImageFolder
+
+    # override __getitem__
+    def __getitem__(self, index):
+        original_tuple = super(ImageFolderWithPaths, self).__getitem__(index)
+        path = self.imgs[index][0]
+        tuple_and_path = (original_tuple + (path,))
+        return tuple_and_path
+
+# data_loader
 
 
-def get_train_valid_loader(data_dir,
-                           batch_size,
-                           random_seed=42,
-                           valid_size=0.1,
-                           shuffle=True,
-                           num_workers=4,
-                           pin_memory=False):
-    """
-    Utility function for loading and returning train and valid
-    multi-process iterators over the CIFAR-10 dataset. A sample
-    9x9 grid of the images can be optionally displayed.
-
-    If using CUDA, num_workers should be set to 1 and pin_memory to True.
-
-    Params
-    ------
-    - data_dir: path directory to the dataset.
-    - batch_size: how many samples per batch to load.
-    - augment: whether to apply the data augmentation scheme
-      mentioned in the paper. Only applied on the train split.
-    - random_seed: fix seed for reproducibility.
-    - valid_size: percentage split of the training set used for
-      the validation set. Should be a float in the range [0, 1].
-    - shuffle: whether to shuffle the train/validation indices.
-    - show_sample: plot 9x9 sample grid of the dataset.
-    - num_workers: number of subprocesses to use when loading the dataset.
-    - pin_memory: whether to copy tensors into CUDA pinned memory. Set it to
-      True if using GPU.
-
-    Returns
-    -------
-    - train_loader: training set iterator.
-    - valid_loader: validation set iterator.
-    """
-    error_msg = "[!] valid_size should be in the range [0, 1]."
-    assert ((valid_size >= 0) and (valid_size <= 1)), error_msg
-
-    # load the dataset
-    train_dataset = datasets.MNIST(
-        root=data_dir, train=True,
-        download=True,
-        transform=transforms.ToTensor()
-    )
-
-    num_train = len(train_dataset)
-    indices = list(range(num_train))
-    split = int(np.floor(valid_size * num_train))
-
-    if shuffle:
-        np.random.seed(random_seed)
-        np.random.shuffle(indices)
-
-    train_idx, valid_idx = indices[split:], indices[:split]
-    train_sampler = SubsetRandomSampler(train_idx)
-    valid_sampler = SubsetRandomSampler(valid_idx)
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler,
-        num_workers=num_workers, pin_memory=pin_memory,
-    )
-    valid_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=valid_sampler,
-        num_workers=num_workers, pin_memory=pin_memory,
-    )
-
-    return (train_loader, valid_loader)
+data_transforms = {
+    'train': transforms.Compose([
+        transforms.RandomRotation(5),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ]),
+    'test': transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ]),
+}
 
 
-def get_test_loader(data_dir,
-                    batch_size,
-                    shuffle=True,
-                    num_workers=4,
-                    pin_memory=False):
-    """
-    Utility function for loading and returning a multi-process
-    test iterator over the CIFAR-10 dataset.
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    If using CUDA, num_workers should be set to 1 and pin_memory to True.
+# print('Device: {}'.format(device))
 
-    Params
-    ------
-    - data_dir: path directory to the dataset.
-    - batch_size: how many samples per batch to load.
-    - shuffle: whether to shuffle the dataset after every epoch.
-    - num_workers: number of subprocesses to use when loading the dataset.
-    - pin_memory: whether to copy tensors into CUDA pinned memory. Set it to
-      True if using GPU.
 
-    Returns
-    -------
-    - data_loader: test set iterator.
-    """
-    dataset = datasets.MNIST(
-        root=data_dir, train=False,
-        download=True,
-        transform=transforms.ToTensor()
-    )
+def data_loader(train_to_valid_ratio=0.8,
+                root_dir=DATA_PATH,
+                batch_size=32):
 
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle,
-        num_workers=num_workers, pin_memory=pin_memory
-    )
+    train_valid_data = ImageFolderWithPaths(
+        os.path.join(root_dir, 'trainset'), data_transforms['train'])
 
-    return data_loader
+    test_data = ImageFolderWithPaths(os.path.join(
+        root_dir, 'testset'), data_transforms['test'])
+
+    print('class_to_idx: {}'.format(train_valid_data.class_to_idx))
+    class_to_idx = train_valid_data.class_to_idx
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+
+    print('Size of train_valid_data[0]: {}\n'.format(len(train_valid_data[0][0].shape)))
+
+    train_valid_data_size = len(train_valid_data)
+    train_valid_indices = list(range(train_valid_data_size))
+    split = int(np.ceil(train_to_valid_ratio * train_valid_data_size))
+#     print('split = {}'.format(split))
+
+#     print('Image size = {}, Label = {}\n'.format(train_valid_data[0][0].shape, train_valid_data[0][1]))
+
+    # shuffle the indices
+    np.random.shuffle(train_valid_indices)
+    train_indices, valid_indices = train_valid_indices[:split], train_valid_indices[split:]
+
+    print('len(train_indices): {}'.format(len(train_indices)))
+    print('len(valid_indices): {}'.format(len(valid_indices)))
+
+    print('Size of test data: {}'.format(len(test_data)))
+
+    train_sampler = SubsetRandomSampler(train_indices)
+    valid_sampler = SubsetRandomSampler(valid_indices)
+
+    train_loader = DataLoader(train_valid_data, batch_size=batch_size, sampler=train_sampler)
+    valid_loader = DataLoader(train_valid_data, batch_size=batch_size, sampler=valid_sampler)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
+    return (train_loader, valid_loader, test_loader,
+            class_to_idx, idx_to_class)

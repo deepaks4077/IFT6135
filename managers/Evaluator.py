@@ -10,15 +10,15 @@ class Evaluator():
 
     def get_log_data(self):
         acc = torch.empty(len(self.data_loader))
-        for i, batch in enumerate(self.data_loader):
+        for i, (inputs, labels, ids) in enumerate(self.data_loader):
             # pdb.set_trace()
 
-            batch[0] = batch[0].to(device=self.params.device)
-            batch[1] = batch[1].to(device=self.params.device)
+            inputs = inputs.to(device=self.params.device)
+            labels = labels.to(device=self.params.device)
 
-            scores = self.model(batch)
+            scores = self.model(inputs)
             pred = torch.argmax(scores, dim=-1)
-            acc[i] = torch.mean((pred == batch[1]).double())
+            acc[i] = torch.mean((pred == labels).double())
 
         log_data = dict([
             ('acc', torch.mean(acc))])
