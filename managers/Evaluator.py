@@ -16,7 +16,7 @@ class Evaluator():
             batch[0] = batch[0].to(device=self.params.device)
             batch[1] = batch[1].to(device=self.params.device)
 
-            scores = self.model.get_score(batch)
+            scores = self.model(batch)
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == batch[1]).double())
 

@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import logging
 import os
+from torch import nn
 import pdb
 
 
@@ -10,6 +11,7 @@ class Trainer():
         self.params = params
         self.model = model
         self.data_loader = data_loader
+        self.criterion = nn.CrossEntropyLoss()
 
         self.model_params = list(model.parameters())
 
@@ -28,7 +30,9 @@ class Trainer():
         batch[0] = batch[0].to(device=self.params.device)
         batch[1] = batch[1].to(device=self.params.device)
 
-        loss = self.model(batch)
+        logits = self.model(batch)
+
+        loss = self.criterion(logits, batch[1])
 
         self.optimizer.zero_grad()
         loss.backward()

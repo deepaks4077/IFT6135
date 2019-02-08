@@ -17,9 +17,7 @@ class CNNModel(nn.Module):
 
         self.ff = nn.Linear(196, 10)  # 4*7*7
 
-        self.criterion = nn.CrossEntropyLoss()
-
-    def get_score(self, batch):
+    def forward(self, batch):
         '''
         batch: (B x 1 x 28 x 28)
         '''
@@ -37,7 +35,3 @@ class CNNModel(nn.Module):
         logits = self.ff(l2)
         # pdb.set_trace()
         return logits
-
-    def forward(self, batch):
-        logits = self.get_score(batch)
-        return self.criterion(logits, batch[1])
