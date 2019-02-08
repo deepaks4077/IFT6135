@@ -64,7 +64,8 @@ train_data_loader, valid_data_loader, test_data_loader, class_to_idx, idx_to_cla
                                                                                                  batch_size=params.batch_size)
 
 trainer = Trainer(params, model, train_data_loader)
-validator = Evaluator(params, model, valid_data_loader, idx_to_class)
+validator = Evaluator(params, model, valid_data_loader)
+tester = Evaluator(params, model, test_data_loader)
 
 for e in range(params.nEpochs):
     tic = time.time()
@@ -82,13 +83,13 @@ for e in range(params.nEpochs):
     if (e + 1) % params.eval_every == 0:
         log_data = validator.get_log_data()
         logging.info('Performance:' + str(log_data))
-        to_continue = trainer.save_model(log_data)
+        # to_continue = trainer.save_model(log_data)
 
-        if not to_continue:
-            break
+        # if not to_continue:
+        #     break
 
     if (e + 1) % params.save_every == 0:
         torch.save(model, os.path.join(params.exp_dir, 'cnn_checkpoint.pth'))
 
-# test_log = tester.get_log_data()
-# logging.info('Test performance:' + str(test_log))
+test_log = tester.get_log_data()
+logging.info('Test performance:' + str(test_log))
