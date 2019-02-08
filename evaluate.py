@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='CNN model for MNIST')
 
 parser.add_argument("--experiment_name", type=str, default="default",
                     help="A folder with this name would be created to dump saved models and log files")
-parser.add_argument("--outtput_name", type=str, default="output",
+parser.add_argument("--output_name", type=str, default="output",
                     help="A folder with this name would be created to dump saved models and log files")
 
 parser.add_argument("--batch_size", type=int, default=128,
