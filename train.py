@@ -31,6 +31,8 @@ parser.add_argument("--optimizer", type=str, default="SGD",
                     help="Which optimizer to use?")
 parser.add_argument("--lr", type=float, default=0.01,
                     help="Learning rate of the optimizer")
+parser.add_argument("--momentum", type=float, default=0.9,
+                    help="Momentum of the SGD optimizer")
 
 parser.add_argument("--debug", type=bool_flag, default=False,
                     help="Run the code in debug mode?")
@@ -78,16 +80,16 @@ for e in range(params.nEpochs):
                  % (e, loss, toc - tic))
 
 #     # pdb.set_trace()
-#     if (e + 1) % params.eval_every == 0:
-#         log_data = validator.get_log_data()
-#         logging.info('Performance:' + str(log_data))
-#         to_continue = trainer.save_model(log_data)
+    if (e + 1) % params.eval_every == 0:
+        log_data = validator.get_log_data()
+        logging.info('Performance:' + str(log_data))
+        # to_continue = trainer.save_model(log_data)
 
-#         if not to_continue:
-#             break
+        # if not to_continue:
+        #     break
 
-#     if (e + 1) % params.save_every == 0:
-#         torch.save(model, os.path.join(params.exp_dir, 'cnn_checkpoint.pth'))
+    if (e + 1) % params.save_every == 0:
+        torch.save(model, os.path.join(params.exp_dir, 'cnn_checkpoint.pth'))
 
 # test_log = tester.get_log_data()
 # logging.info('Test performance:' + str(test_log))
