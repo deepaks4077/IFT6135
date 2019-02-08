@@ -18,6 +18,9 @@ parser.add_argument("--experiment_name", type=str, default="default",
 parser.add_argument("--outtput_name", type=str, default="output",
                     help="A folder with this name would be created to dump saved models and log files")
 
+parser.add_argument("--batch_size", type=int, default=128,
+                    help="Batch size")
+
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
 
