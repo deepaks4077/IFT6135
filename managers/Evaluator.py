@@ -27,9 +27,9 @@ class Evaluator():
 
         return log_data
 
-    def save_predictions(self, model, outfile_name):
+    def save_predictions(self, outfile_name):
 
-        model.eval()
+        self.model.eval()
 
         ids_and_predictions = dict()
 
@@ -38,7 +38,7 @@ class Evaluator():
             inputs = inputs.to(device=self.params.device)
             labels = labels.to(device=self.params.device)
 
-            outputs = model(inputs)
+            outputs = self.model(inputs)
             _, preds = torch.max(outputs, 1)
 
             preds_list = list(preds.cpu().numpy())
