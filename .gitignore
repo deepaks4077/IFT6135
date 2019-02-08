@@ -3,3 +3,4 @@ __pycache__/
 tmp.txt
 experiments/
 data/
+*.csv
