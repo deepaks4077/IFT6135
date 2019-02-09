@@ -70,6 +70,7 @@ for e in range(params.nEpochs):
     tic = time.time()
     for inputs, labels, ids in train_data_loader:
         loss = trainer.one_step(inputs, labels)
+        # print(loss)
     toc = time.time()
 
     tb_logger.scalar_summary('loss', loss, e)
