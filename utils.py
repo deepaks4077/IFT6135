@@ -68,7 +68,7 @@ def initialize_model(params):
         model = torch.load(os.path.join(params.exp_dir, 'best_model.pth'))
     else:
         logging.info('No existing model found. Initializing new model..')
-        model = ResNet()
+        model = CNNModel()
 
     return model
 
