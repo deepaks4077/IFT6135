@@ -71,13 +71,13 @@ class CNNModel(nn.Module):
 
         # 4
         # (72, 16, 16)
-        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
+        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # 5
         # (72, 8, 8)
-        self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
-                                    nn.ReLU())
+        # self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+        #                             nn.ReLU())
 
         # 6
         # (144, 8, 8)
@@ -105,10 +105,10 @@ class CNNModel(nn.Module):
 
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)
-        l5 = self.layer5(l4)
+        # l5 = self.layer5(l4)
 
-        l5 = self.relu(l5 + self.downSample(l2))
-        l6 = self.layer6(l5)
+        # l4 = self.relu(l4 + self.downSample(l2))
+        l6 = self.layer6(l4)
 
         l6 = l6.view(-1, 144 * 4 * 4)
         logits = self.fc_layers(l6)
