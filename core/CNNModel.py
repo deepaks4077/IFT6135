@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 import pdb
 
@@ -71,7 +72,7 @@ class CNNModel(nn.Module):
 
         # 4
         # (72, 16, 16)
-        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=108, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # 5
@@ -92,10 +93,7 @@ class CNNModel(nn.Module):
             nn.Linear(500, 2)
         )
 
-        self.downSample = nn.Sequential(nn.Conv2d(in_channels=36, out_channels=144, kernel_size=(3, 3), padding=1),
-                                        nn.MaxPool2d(kernel_size=(2, 2), stride=2))
-
-        self.relu = nn.ReLU()
+        self.downSample = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
 
     # forward pass
     def forward(self, x):
@@ -106,8 +104,8 @@ class CNNModel(nn.Module):
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)
         # l5 = self.layer5(l4)
-
-        # l4 = self.relu(l4 + self.downSample(l2))
+        # pdb.set_trace()
+        l4 = torch.cat((l4, self.downSample(l2)), dim=1)
         l6 = self.layer6(l4)
 
         l6 = l6.view(-1, 144 * 4 * 4)
