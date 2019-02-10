@@ -1,1 +1,1 @@
-from .CNNModel import CNNModel
+from .CNNModel import CNNModel1, CNNModel2

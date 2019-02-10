@@ -2,9 +2,9 @@ from torch import nn
 import pdb
 
 
-class CNNModel(nn.Module):
+class CNNModel1(nn.Module):
     def __init__(self, params):
-        super(CNNModel, self).__init__()
+        super(CNNModel1, self).__init__()
         self.params = params
 
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True)
@@ -33,5 +33,66 @@ class CNNModel(nn.Module):
         l2 = l2.view(batch[0].size()[0], -1)
 
         logits = self.ff(l2)
+        # pdb.set_trace()
+        return logits
+
+
+class CNNModel2(nn.Module):
+    def __init__(self, params):
+        super(CNNModel2, self).__init__()
+
+        self.params = params
+        # 1
+        # (1, 28, 28)
+        self.layer1 = nn.Sequential(nn.Conv2d(in_channels=1, out_channels=18, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+        # 2
+        # (18, 14, 14)
+        self.layer2 = nn.Sequential(nn.Conv2d(in_channels=18, out_channels=36, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+
+        # 3
+        # (36, 7, 7)
+        self.layer3 = nn.Sequential(nn.Conv2d(in_channels=36, out_channels=72, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU())
+
+        # 4
+        # (72, 7, 7)
+        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU())
+
+        # 5
+        # (72, 8, 8)
+        # self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+        #                             nn.ReLU())
+
+        # 6
+        # (144, 7, 7)
+        self.layer6 = nn.Sequential(nn.Conv2d(in_channels=144, out_channels=144, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+
+        # FC layers
+        # (144, 3, 3)
+        self.fc_layers = nn.Sequential(
+            # nn.Linear(144 * 3 * 3, 144 * 3 * 3), nn.ReLU(),
+            nn.Linear(144 * 3 * 3, 500), nn.ReLU(),
+            nn.Linear(500, 10)
+        )
+
+    # forward pass
+    def forward(self, batch):
+        # pdb.set_trace()
+        l1 = self.layer1(batch[0])
+        l2 = self.layer2(l1)
+
+        l3 = self.layer3(l2)
+        l4 = self.layer4(l3)
+        # l5 = self.layer5(l4)
+        # pdb.set_trace()
+        # l4 = torch.cat((l4, self.downSample(l2)), dim=1)
+        l6 = self.layer6(l4)
+        # pdb.set_trace()
+        l6 = l6.view(-1, 144 * 3 * 3)
+        logits = self.fc_layers(l6)
         # pdb.set_trace()
         return logits

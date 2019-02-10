@@ -12,7 +12,7 @@ from torchvision import datasets
 from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from core import CNNModel
+from core import CNNModel1, CNNModel2
 
 FALSY_STRINGS = {'off', 'false', '0'}
 TRUTHY_STRINGS = {'on', 'true', '1'}
@@ -67,7 +67,7 @@ def initialize_model(params):
         model = torch.load(os.path.join(params.exp_dir, 'best_model.pth'))
     else:
         logging.info('No existing model found. Initializing new model..')
-        model = CNNModel(params)
+        model = CNNModel2(params)
 
     return model
 
