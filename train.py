@@ -80,7 +80,7 @@ for e in range(params.nEpochs):
     tic = time.time()
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
-        print(loss)
+        # print(loss)
     toc = time.time()
 
     logging.info('Epoch %d with loss: %f in %f'
