@@ -2,6 +2,7 @@ import argparse
 import logging
 import time
 import pdb
+import matplotlib.pyplot as plt
 
 from core import *
 from managers import *
@@ -20,7 +21,7 @@ parser.add_argument("--nEpochs", type=int, default=10,
                     help="Learning rate of the optimizer")
 parser.add_argument("--batch_size", type=int, default=256,
                     help="Batch size")
-parser.add_argument("--eval_every", type=int, default=25,
+parser.add_argument("--eval_every", type=int, default=1,
                     help="Interval of epochs to evaluate the model?")
 parser.add_argument("--save_every", type=int, default=50,
                     help="Interval of epochs to save a checkpoint of the model?")
@@ -73,14 +74,17 @@ test_data_loader = get_test_loader(DATA_PATH,
                                    pin_memory=params.use_gpu)
 
 trainer = Trainer(params, model, train_data_loader)
+tr_validator = Evaluator(params, model, train_data_loader)
 validator = Evaluator(params, model, valid_data_loader)
 tester = Evaluator(params, model, test_data_loader)
+
+tr_acc = []
+val_acc = []
 
 for e in range(params.nEpochs):
     tic = time.time()
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
-        # print(loss)
     toc = time.time()
 
     logging.info('Epoch %d with loss: %f in %f'
@@ -88,9 +92,12 @@ for e in range(params.nEpochs):
 
     # pdb.set_trace()
     if (e + 1) % params.eval_every == 0:
-        log_data = validator.get_log_data()
-        logging.info('Performance:' + str(log_data))
-        to_continue = trainer.save_model(log_data)
+        tr_log_data = tr_validator.get_log_data()
+        val_log_data = validator.get_log_data()
+        logging.info('Train performance: %d, Validattion performance: %d' % (tr_log_data['acc'], tr_log_data['acc']))
+        tr_acc.append(tr_log_data['acc'])
+        val_acc.append(val_log_data['acc'])
+        to_continue = trainer.save_model(val_log_data)
 
         if not to_continue:
             break
@@ -100,3 +107,10 @@ for e in range(params.nEpochs):
 
 test_log = tester.get_log_data()
 logging.info('Test performance:' + str(test_log))
+
+fig = plt.figure(figsize=(15, 6))
+plt.plot(tr_log_data)
+plt.plot(val_log_data)
+plt.title('Train and validation accuracies')
+plt.legend(['Train set accuracy', 'Validation set accuracy'])
+plt.savefig('mnist.png', dpi=fig.dpi)
