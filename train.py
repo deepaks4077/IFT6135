@@ -94,7 +94,7 @@ for e in range(params.nEpochs):
     if (e + 1) % params.eval_every == 0:
         tr_log_data = tr_validator.get_log_data()
         val_log_data = validator.get_log_data()
-        logging.info('Train performance: %d, Validattion performance: %d' % (tr_log_data['acc'], tr_log_data['acc']))
+        logging.info('Train performance: %f, Validattion performance: %f' % (tr_log_data['acc'], tr_log_data['acc']))
         tr_acc.append(tr_log_data['acc'])
         val_acc.append(val_log_data['acc'])
         to_continue = trainer.save_model(val_log_data)
