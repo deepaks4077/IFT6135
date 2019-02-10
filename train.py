@@ -2,6 +2,8 @@ import argparse
 import logging
 import time
 import pdb
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 from core import *
