@@ -66,26 +66,36 @@ class CNNModel1(nn.Module):
         # 2
         # (18, 32, 32)
         self.layer2 = nn.Sequential(nn.Conv2d(in_channels=18, out_channels=36, kernel_size=(3, 3), padding=1),
-                                    nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+                                    nn.ReLU())
 
         # 3
+        # (36, 32, 32)
+        self.layer3 = nn.Sequential(nn.Conv2d(in_channels=36, out_channels=36, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+
+        # 4
         # (36, 16, 16)
-        self.layer3 = nn.Sequential(nn.Conv2d(in_channels=36, out_channels=72, kernel_size=(3, 3), padding=1),
+        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=36, out_channels=72, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU())
+
+        # 3
+        # (72, 16, 16)
+        self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
                                     nn.ReLU())
 
         # 4
         # (72, 16, 16)
-        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
+        self.layer6 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # 5
         # (72, 8, 8)
-        self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+        self.layer7 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
                                     nn.ReLU())
 
         # 6
         # (144, 8, 8)
-        self.layer6 = nn.Sequential(nn.Conv2d(in_channels=144, out_channels=144, kernel_size=(3, 3), padding=1),
+        self.layer8 = nn.Sequential(nn.Conv2d(in_channels=144, out_channels=144, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # FC layers
@@ -107,12 +117,14 @@ class CNNModel1(nn.Module):
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)
         l5 = self.layer5(l4)
+        l6 = self.layer6(l5)
+        l7 = self.layer7(l6)
         # pdb.set_trace()
         # l4 = torch.cat((l4, self.downSample(l2)), dim=1)
-        l6 = self.layer6(l5)
+        l8 = self.layer8(l7)
 
-        l6 = l6.view(-1, 144 * 4 * 4)
-        logits = self.fc_layers(l6)
+        l8 = l8.view(-1, 144 * 4 * 4)
+        logits = self.fc_layers(l8)
         return logits
 
 
@@ -123,7 +135,7 @@ class CNNModel2(nn.Module):
         self.params = params
         # 1
         # (3, 64, 64)
-        self.layer1 = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=3, kernel_size=(3, 3), padding=1),
+        self.layer1 = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=12, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
         # 2
         # (3, 32, 32)
@@ -163,6 +175,7 @@ class CNNModel2(nn.Module):
         # (198, 2, 2)
         self.fc_layers = nn.Sequential(
             nn.Linear(198 * 2 * 2, 198 * 2 * 2), nn.ReLU(),
+            nn.Dropout(p=0.5),
             nn.Linear(198 * 2 * 2, 750), nn.ReLU(),
             nn.Linear(750, 10)
         )
