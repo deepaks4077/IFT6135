@@ -31,6 +31,8 @@ parser.add_argument("--optimizer", type=str, default="SGD",
                     help="Which optimizer to use?")
 parser.add_argument("--lr", type=float, default=0.01,
                     help="Learning rate of the optimizer")
+parser.add_argument("--momentum", type=float, default=0.9,
+                    help="Momentum of the SGD optimizer")
 
 parser.add_argument("--debug", type=bool_flag, default=False,
                     help="Run the code in debug mode?")
@@ -62,7 +64,8 @@ train_data_loader, valid_data_loader, _, class_to_idx, idx_to_class = data_loade
                                                                                   batch_size=params.batch_size)
 
 trainer = Trainer(params, model, train_data_loader)
-validator = Evaluator(params, model, valid_data_loader, idx_to_class)
+validator1 = Evaluator(params, model, train_data_loader, idx_to_class)
+validator2 = Evaluator(params, model, valid_data_loader, idx_to_class)
 
 tb_logger = Logger(params.exp_dir)
 
@@ -80,10 +83,11 @@ for e in range(params.nEpochs):
 
     # pdb.set_trace()
     if (e + 1) % params.eval_every == 0:
-        log_data = validator.get_log_data()
-        logging.info('Performance:' + str(log_data))
+        tr_log_data = validator1.get_log_data()
+        val_log_data = validator2.get_log_data()
+        logging.info('Train performance: %f, Validation performance: %f' % (tr_log_data['acc'], val_log_data['acc']))
 
-        for tag, value in log_data.items():
+        for tag, value in val_log_data.items():
             tb_logger.scalar_summary(tag, value, e + 1)
 
         to_continue = trainer.save_model(log_data)
