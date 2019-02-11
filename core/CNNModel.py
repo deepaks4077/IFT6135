@@ -167,15 +167,29 @@ class CNNModel2(nn.Module):
             nn.Linear(750, 10)
         )
 
+        self.downSample1 = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=12, kernel_size=(3, 3), padding=1),
+                                         nn.MaxPool2d(kernel_size=(4, 4), stride=4))
+
+        self.downSample2 = nn.Sequential(nn.Conv2d(in_channels=12, out_channels=96, kernel_size=(3, 3), padding=1),
+                                         nn.MaxPool2d(kernel_size=(4, 4), stride=4))
+        self.relu = nn.ReLU()
+
     # forward pass
+
     def forward(self, x):
         # pdb.set_trace()
         l1 = self.layer1(x)
         l2 = self.layer2(l1)
         l3 = self.layer3(l2)
+
+        l3 = self.relu(l3 + self.downSample1(x))
+
         l4 = self.layer4(l3)
         l5 = self.layer5(l4)
         l6 = self.layer6(l5)
+
+        l6 = self.relu(l6 + self.downSample2(l3))
+
         l7 = self.layer7(l6)
         l8 = self.layer8(l7)
 
