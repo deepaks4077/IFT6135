@@ -26,8 +26,10 @@ class ResBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self):
+    def __init__(self, params):
         super(ResNet, self).__init__()
+
+        self.params = params
 
         self.block1 = ResBlock(3, 18)
         self.block2 = ResBlock(18, 36)
@@ -35,9 +37,9 @@ class ResNet(nn.Module):
         self.block4 = ResBlock(72, 144)
 
         self.fc_layers = nn.Sequential(
-            nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
-            nn.Linear(144 * 4 * 4, 500), nn.ReLU(),
-            nn.Linear(500, 2)
+            # nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
+            nn.Linear(144 * 4 * 4, 750), nn.ReLU(),
+            nn.Linear(750, 2)
         )
 
     def forward(self, input):
@@ -73,13 +75,13 @@ class CNNModel1(nn.Module):
 
         # 4
         # (72, 16, 16)
-        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=108, kernel_size=(3, 3), padding=1),
+        self.layer4 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # 5
         # (72, 8, 8)
-        # self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
-        #                             nn.ReLU())
+        self.layer5 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=144, kernel_size=(3, 3), padding=1),
+                                    nn.ReLU())
 
         # 6
         # (144, 8, 8)
@@ -104,10 +106,10 @@ class CNNModel1(nn.Module):
 
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)
-        # l5 = self.layer5(l4)
+        l5 = self.layer5(l4)
         # pdb.set_trace()
-        l4 = torch.cat((l4, self.downSample(l2)), dim=1)
-        l6 = self.layer6(l4)
+        # l4 = torch.cat((l4, self.downSample(l2)), dim=1)
+        l6 = self.layer6(l5)
 
         l6 = l6.view(-1, 144 * 4 * 4)
         logits = self.fc_layers(l6)
@@ -165,9 +167,9 @@ class CNNModel2(nn.Module):
         )
 
     # forward pass
-    def forward(self, batch):
+    def forward(self, x):
         # pdb.set_trace()
-        l1 = self.layer1(batch[0])
+        l1 = self.layer1(x)
         l2 = self.layer2(l1)
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)

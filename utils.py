@@ -68,7 +68,12 @@ def initialize_model(params):
         model = torch.load(os.path.join(params.exp_dir, 'best_model.pth'))
     else:
         logging.info('No existing model found. Initializing new model..')
-        model = CNNModel1(params)
+        if params.model == 'resnet':
+            model = ResNet(params)
+        elif params.model == 'cnn1':
+            model = CNNModel1(params)
+        elif params.model == 'cnn2':
+            model = CNNModel2(params)
 
     return model
 

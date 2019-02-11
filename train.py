@@ -36,6 +36,8 @@ parser.add_argument("--momentum", type=float, default=0.9,
 
 parser.add_argument("--debug", type=bool_flag, default=False,
                     help="Run the code in debug mode?")
+parser.add_argument("--model", type=str, default='cnn1',
+                    help="Run the code in debug mode?")
 
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
