@@ -102,6 +102,7 @@ class CNNModel1(nn.Module):
         # (144, 4, 4)
         self.fc_layers = nn.Sequential(
             nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
+            nn.Dropout(p=params.dropout),
             nn.Linear(144 * 4 * 4, 500), nn.ReLU(),
             nn.Linear(500, 2)
         )

@@ -33,6 +33,8 @@ parser.add_argument("--lr", type=float, default=0.01,
                     help="Learning rate of the optimizer")
 parser.add_argument("--momentum", type=float, default=0.9,
                     help="Momentum of the SGD optimizer")
+parser.add_argument("--dropout", type=float, default=0.5,
+                    help="Dropout rate")
 
 parser.add_argument("--debug", type=bool_flag, default=False,
                     help="Run the code in debug mode?")
