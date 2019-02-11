@@ -85,7 +85,7 @@ class CNNModel1(nn.Module):
 
         # 4
         # (72, 16, 16)
-        self.layer6 = nn.Sequential(nn.Conv2d(in_channels=72, out_channels=72, kernel_size=(3, 3), padding=1),
+        self.layer6 = nn.Sequential(nn.Conv2d(in_channels=90, out_channels=72, kernel_size=(3, 3), padding=1),
                                     nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
 
         # 5
@@ -114,10 +114,12 @@ class CNNModel1(nn.Module):
         # pdb.set_trace()
         l1 = self.layer1(x)
         l2 = self.layer2(l1)
-
         l3 = self.layer3(l2)
         l4 = self.layer4(l3)
         l5 = self.layer5(l4)
+
+        l5 = torch.cat((l5, self.downSample(l1)), dim=1)
+
         l6 = self.layer6(l5)
         l7 = self.layer7(l6)
         # pdb.set_trace()
