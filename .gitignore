@@ -4,3 +4,4 @@ tmp.txt
 experiments/
 data/
 *.csv
+*.png
