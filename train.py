@@ -90,7 +90,7 @@ for e in range(params.nEpochs):
         for tag, value in val_log_data.items():
             tb_logger.scalar_summary(tag, value, e + 1)
 
-        to_continue = trainer.save_model(log_data)
+        to_continue = trainer.save_model(val_log_data)
 
         if not to_continue:
             break
