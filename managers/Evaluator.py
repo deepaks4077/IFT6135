@@ -6,7 +6,7 @@ import pdb
 class Evaluator():
     def __init__(self, params, model, data_loader, idx_to_class):
         self.params = params
-        self.model = model.eval()
+        self.model = model
         self.data_loader = data_loader
         self.idx_to_class = idx_to_class
 
@@ -18,6 +18,7 @@ class Evaluator():
             inputs = inputs.to(device=self.params.device)
             labels = labels.to(device=self.params.device)
 
+            self.model.eval()
             scores = self.model(inputs)
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == labels).double())

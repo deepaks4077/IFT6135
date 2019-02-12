@@ -28,6 +28,7 @@ class Trainer():
         inputs = inputs.to(device=self.params.device)
         labels = labels.to(device=self.params.device)
 
+        self.model.train()
         logits = self.model(inputs)
 
         loss = self.criterion(logits, labels)
