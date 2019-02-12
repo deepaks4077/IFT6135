@@ -134,7 +134,7 @@ class CNNModel1(nn.Module):
 
 class CNNModel2(nn.Module):
     def __init__(self, params):
-        super(CNNModel3, self).__init__()
+        super(CNNModel2, self).__init__()
 
         self.params = params
         # 1
