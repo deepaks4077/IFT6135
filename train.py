@@ -63,7 +63,7 @@ logging.info(params.device)
 
 model = initialize_model(params).to(device=params.device)
 
-train_data_loader, valid_data_loader, _, class_to_idx, idx_to_class = data_loader(train_to_valid_ratio=0.8,
+train_data_loader, valid_data_loader, _, class_to_idx, idx_to_class = data_loader(train_to_valid_ratio=0.9,
                                                                                   root_dir=DATA_PATH,
                                                                                   batch_size=params.batch_size)
 
