@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from core import CNNModel1, CNNModel2, CNNModel3, ResNet
+from core import CNNModel1, CNNModel2, ResNet
 
 FALSY_STRINGS = {'off', 'false', '0'}
 TRUTHY_STRINGS = {'on', 'true', '1'}
@@ -74,8 +74,6 @@ def initialize_model(params):
             model = CNNModel1(params)
         elif params.model == 'cnn2':
             model = CNNModel2(params)
-        elif params.model == 'cnn3':
-            model = CNNModel3(params)
 
     return model
 

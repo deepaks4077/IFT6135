@@ -6,7 +6,7 @@ import pdb
 class Evaluator():
     def __init__(self, params, model, data_loader, idx_to_class):
         self.params = params
-        self.model = model
+        self.model = model.eval()
         self.data_loader = data_loader
         self.idx_to_class = idx_to_class
 
