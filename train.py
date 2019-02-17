@@ -98,7 +98,8 @@ for e in range(params.nEpochs):
     if (e + 1) % params.eval_every == 0:
         tr_log_data = tr_validator.get_log_data()
         val_log_data = validator.get_log_data()
-        logging.info('Train performance: %f, Validattion performance: %f' % (tr_log_data['acc'], val_log_data['acc']))
+        logging.info('Train loss: %f, Validation loss: %f, Train acc: %f, Validation acc: %f'
+                     % (tr_log_data['loss'], val_log_data['loss'], tr_log_data['acc'], val_log_data['acc']))
         tr_acc.append(tr_log_data['acc'])
         tr_losses.append(tr_log_data['loss'])
         val_acc.append(val_log_data['acc'])

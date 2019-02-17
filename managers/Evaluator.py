@@ -23,10 +23,9 @@ class Evaluator():
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == batch[1]).double())
 
-            loss += self.criterion(scores, batch[1])
+            loss += self.criterion(scores, batch[1]).item()
 
         log_data = dict([
             ('acc', torch.mean(acc)),
             ('loss', (loss / len(self.data_loader)))])
-
         return log_data
