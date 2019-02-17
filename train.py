@@ -2,6 +2,7 @@ import argparse
 import logging
 import time
 import pdb
+import matplotlib.pyplot as plt
 
 from core import *
 from managers import *
@@ -73,6 +74,9 @@ validator2 = Evaluator(params, model, valid_data_loader, idx_to_class)
 
 tb_logger = Logger(params.exp_dir)
 
+tr_acc = []
+val_acc = []
+
 for e in range(params.nEpochs):
     tic = time.time()
     for inputs, labels, ids in train_data_loader:
@@ -91,6 +95,9 @@ for e in range(params.nEpochs):
         val_log_data = validator2.get_log_data()
         logging.info('Train performance: %f, Validation performance: %f' % (tr_log_data['acc'], val_log_data['acc']))
 
+        tr_acc.append(tr_log_data['acc'])
+        val_acc.append(val_log_data['acc'])
+
         for tag, value in val_log_data.items():
             tb_logger.scalar_summary(tag, value, e + 1)
 
@@ -104,3 +111,11 @@ for e in range(params.nEpochs):
 
 # test_log = tester.get_log_data()
 # logging.info('Test performance:' + str(test_log))
+
+fig = plt.figure(figsize=(9, 6))
+plt.plot(tr_acc, 'k-')
+plt.plot(val_acc, 'r-')
+plt.title('Train and validation accuracies')
+plt.legend(['Train set accuracy', 'Validation set accuracy'])
+plt.xlabel('Epochs')
+plt.savefig(params.experiment_name + '.png', dpi=fig.dpi)
