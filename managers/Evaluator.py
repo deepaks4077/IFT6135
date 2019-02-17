@@ -12,7 +12,7 @@ class Evaluator():
 
     def get_log_data(self):
         acc = torch.empty(len(self.data_loader))
-        loss = torch.empty(len(self.data_loader))
+        loss = 0
         for i, batch in enumerate(self.data_loader):
             # pdb.set_trace()
 
@@ -23,10 +23,10 @@ class Evaluator():
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == batch[1]).double())
 
-            loss[i] = self.criterion(scores, batch[1])
+            loss += self.criterion(scores, batch[1])
 
         log_data = dict([
             ('acc', torch.mean(acc)),
-            ('loss', torch.mean(loss))])
+            ('loss', (loss / len(self.data_loader)))])
 
         return log_data
