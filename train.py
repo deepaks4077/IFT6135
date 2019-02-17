@@ -82,12 +82,17 @@ tester = Evaluator(params, model, test_data_loader)
 
 tr_acc = []
 val_acc = []
+tr_losses = []
+val_losses = []
 
 for e in range(params.nEpochs):
     tic = time.time()
+    total_loss = []
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
+        total_loss.append(loss)
     toc = time.time()
+    tr_losses.append(np.mean(total_loss))
 
     logging.info('Epoch %d with loss: %f in %f'
                  % (e, loss, toc - tic))
@@ -99,6 +104,7 @@ for e in range(params.nEpochs):
         logging.info('Train performance: %f, Validattion performance: %f' % (tr_log_data['acc'], val_log_data['acc']))
         tr_acc.append(tr_log_data['acc'])
         val_acc.append(val_log_data['acc'])
+        val_losses.append(val_log_data['loss'])
         to_continue = trainer.save_model(val_log_data)
 
         if not to_continue:
@@ -111,8 +117,10 @@ test_log = tester.get_log_data()
 logging.info('Test performance:' + str(test_log))
 
 fig = plt.figure(figsize=(15, 6))
-plt.plot(tr_acc)
-plt.plot(val_acc)
+plt.plot(tr_acc, 'k-')
+plt.plot(tr_losses, 'k--')
+plt.plot(val_acc, 'r-')
+plt.plot(val_losses, 'r--')
 plt.title('Train and validation accuracies')
-plt.legend(['Train set accuracy', 'Validation set accuracy'])
-plt.savefig('mnist.png', dpi=fig.dpi)
+plt.legend(['Train set accuracy', 'Train set loss', 'Validation set accuracy', 'Validation set loss'])
+plt.savefig(params.experiment_name + '.png', dpi=fig.dpi)

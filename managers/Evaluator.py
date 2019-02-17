@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import pdb
 
 
@@ -7,9 +8,11 @@ class Evaluator():
         self.params = params
         self.model = model
         self.data_loader = data_loader
+        self.criterion = nn.CrossEntropyLoss()
 
     def get_log_data(self):
         acc = torch.empty(len(self.data_loader))
+        loss = torch.empty(len(self.data_loader))
         for i, batch in enumerate(self.data_loader):
             # pdb.set_trace()
 
@@ -20,7 +23,10 @@ class Evaluator():
             pred = torch.argmax(scores, dim=-1)
             acc[i] = torch.mean((pred == batch[1]).double())
 
+            loss[i] = self.criterion(scores, batch[1])
+
         log_data = dict([
-            ('acc', torch.mean(acc))])
+            ('acc', torch.mean(acc)),
+            ('loss', torch.mean(loss))])
 
         return log_data
