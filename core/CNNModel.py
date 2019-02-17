@@ -49,10 +49,10 @@ class ResNet(nn.Module):
         # 5
         # (144, 4, 4)
         self.fc_layers = nn.Sequential(
+            # nn.Dropout(p=params.dropout),
+            # nn.Linear(264 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
             nn.Dropout(p=params.dropout),
-            nn.Linear(264 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
-            nn.Dropout(p=params.dropout),
-            nn.Linear(144 * 4 * 4, 750), nn.ReLU(),
+            nn.Linear(264 * 4 * 4, 750), nn.ReLU(),
             nn.Linear(750, 2)
         )
 
