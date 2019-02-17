@@ -50,7 +50,7 @@ class ResNet(nn.Module):
         # (144, 4, 4)
         self.fc_layers = nn.Sequential(
             nn.Dropout(p=params.dropout),
-            nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
+            nn.Linear(264 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
             nn.Dropout(p=params.dropout),
             nn.Linear(144 * 4 * 4, 750), nn.ReLU(),
             nn.Linear(750, 2)
@@ -62,7 +62,7 @@ class ResNet(nn.Module):
         l3 = self.block3(l2)
         l4 = self.block4(l3)
 
-        l4 = l4.view(-1, 144 * 4 * 4)
+        l4 = l4.view(-1, 264 * 4 * 4)
 
         logits = self.fc_layers(l4)
         return logits
