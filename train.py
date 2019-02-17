@@ -87,12 +87,9 @@ val_losses = []
 
 for e in range(params.nEpochs):
     tic = time.time()
-    total_loss = []
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
-        total_loss.append(loss.item())
     toc = time.time()
-    tr_losses.append(np.mean(total_loss))
 
     logging.info('Epoch %d with loss: %f in %f'
                  % (e, loss, toc - tic))
@@ -103,6 +100,7 @@ for e in range(params.nEpochs):
         val_log_data = validator.get_log_data()
         logging.info('Train performance: %f, Validattion performance: %f' % (tr_log_data['acc'], val_log_data['acc']))
         tr_acc.append(tr_log_data['acc'])
+        tr_losses.append(tr_log_data['loss'])
         val_acc.append(val_log_data['acc'])
         val_losses.append(val_log_data['loss'])
         # to_continue = trainer.save_model(val_log_data)
