@@ -7,11 +7,11 @@ class ResBlock(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(ResBlock, self).__init__()
         self.conv1 = nn.Sequential(nn.Conv2d(in_channels=in_channel, out_channels=out_channel, kernel_size=(3, 3), padding=1),
-                                   nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
-        self.conv2 = nn.Sequential(nn.Conv2d(in_channels=out_channel, out_channels=out_channel, kernel_size=(3, 3), padding=1),
                                    nn.ReLU())
-        self.downSample = nn.Sequential(nn.Conv2d(in_channels=in_channel, out_channels=out_channel, kernel_size=(3, 3), padding=1),
-                                        nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+        self.conv2 = nn.Sequential(nn.Conv2d(in_channels=out_channel, out_channels=out_channel, kernel_size=(3, 3), padding=1),
+                                   nn.ReLU(), nn.MaxPool2d(kernel_size=(2, 2), stride=2))
+
+        self.downSample = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
         self.relu = nn.ReLU()
 
     def forward(self, input):
@@ -19,7 +19,7 @@ class ResBlock(nn.Module):
         l1 = self.conv1(input)
         l2 = self.conv2(l1)
 
-        l2 += self.downSample(x)
+        l2 = torch.cat((l2, self.downSample(x)), dim=1)
 
         out = self.relu(l2)
         return out
@@ -30,14 +30,28 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
 
         self.params = params
+        # 1
+        # (3, 64, 64)
+        self.block1 = ResBlock(3, 9)
 
-        self.block1 = ResBlock(3, 18)
-        self.block2 = ResBlock(18, 36)
-        self.block3 = ResBlock(36, 72)
-        self.block4 = ResBlock(72, 144)
+        # 2
+        # (9, 32, 32)
+        self.block2 = ResBlock(12, 36)
 
+        # 3
+        # (36, 16, 16)
+        self.block3 = ResBlock(48, 72)
+
+        # 4
+        # (72, 8, 8)
+        self.block4 = ResBlock(120, 144)
+
+        # 5
+        # (144, 4, 4)
         self.fc_layers = nn.Sequential(
-            # nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
+            nn.Dropout(p=params.dropout),
+            nn.Linear(144 * 4 * 4, 144 * 4 * 4), nn.ReLU(),
+            nn.Dropout(p=params.dropout),
             nn.Linear(144 * 4 * 4, 750), nn.ReLU(),
             nn.Linear(750, 2)
         )
