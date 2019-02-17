@@ -90,7 +90,7 @@ for e in range(params.nEpochs):
     total_loss = []
     for b, batch in enumerate(train_data_loader):
         loss = trainer.one_step(batch)
-        total_loss.append(loss)
+        total_loss.append(loss.item())
     toc = time.time()
     tr_losses.append(np.mean(total_loss))
 
@@ -105,10 +105,10 @@ for e in range(params.nEpochs):
         tr_acc.append(tr_log_data['acc'])
         val_acc.append(val_log_data['acc'])
         val_losses.append(val_log_data['loss'])
-        to_continue = trainer.save_model(val_log_data)
+        # to_continue = trainer.save_model(val_log_data)
 
-        if not to_continue:
-            break
+        # if not to_continue:
+        #     break
 
     if (e + 1) % params.save_every == 0:
         torch.save(model, os.path.join(params.exp_dir, 'cnn_checkpoint.pth'))
