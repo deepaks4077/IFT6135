@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 
 
 def clones(module, N):
-    "
+    """
     A helper function for producing N identical layers (each with their own parameters).
     
     inputs: 
@@ -39,7 +39,7 @@ def clones(module, N):
 
     returns:
         a ModuleList with the copies of the module (the ModuleList is itself also a module)
-    "
+    """
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
 # Problem 1
@@ -257,13 +257,31 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = n_units // n_heads
         # This requires the number of n_heads to evenly divide n_units.
         assert n_units % n_heads == 0
-        self.n_units = n_units 
+        self.n_units = n_units
 
         # TODO: create/initialize any necessary parameters or layers
         # Initialize all weights and biases uniformly in the range [-k, k],
         # where k is the square root of 1/n_units.
         # Note: the only Pytorch modules you are allowed to use are nn.Linear 
         # and nn.Dropout
+
+        k = np.sqrt(1.0 / n_units)
+
+        self.n_heads = n_heads
+        self.dropout = nn.Dropout(dropout)
+
+        self.Q = nn.Linear(self.n_units, self.n_units)
+        nn.init.uniform(self.Q.weight, a=-k, b=k)
+
+        self.K = nn.Linear(self.n_units, self.n_units)
+        nn.init.uniform(self.K.weight, a=-k, b=k)
+
+        self.V = nn.Linear(self.n_units, self.n_units)
+        nn.init.uniform(self.V.weight, a=-k, b=k)
+
+        self.Out = nn.Linear(self.n_units, self.n_units)
+        nn.init.uniform(self.Out.weight, a=-k, b=k)
+
         
     def forward(self, query, key, value, mask=None):
         # TODO: implement the masked multi-head attention.
@@ -273,9 +291,34 @@ class MultiHeadedAttention(nn.Module):
         # generating the "attention values" (i.e. A_i in the .tex)
         # Also apply dropout to the attention values.
 
-        return # size: (batch_size, seq_len, self.n_units)
+        batch_size = query.size(0)
 
+        q = self.Q(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        k = self.K(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        v = self.V(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
 
+        # perform attention
+        k_t = k.transpose(-2, -1)  # batch_size * n_heads * d_k * seq_length
+        s = torch.matmul(q, k_t) / math.sqrt(self.d_k)  # batch_size * n_heads * seq_length * seq_length
+
+        if not mask:
+            mask = mask.unsqueeze(1)
+            s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
+
+        s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
+
+        if not self.dropout:
+            s = self.dropout(s)
+
+        s = torch.matmul(s, v)  # batch_size * n_heads * seq_length * d_k
+
+        # batch_size * n_heads * seq_length * d_k  --> batch_size * seq_length * n_heads * d_k --> batch_size * seq_length * self.n_units
+        # concatenated_heads = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_units)
+        concatenated_heads = s.transpose(1, 2).view(batch_size, -1, self.n_units)
+
+        output = self.Out(concatenated_heads)  # batch_size * seq_length * self.n_units
+
+        return output  # size: (batch_size, seq_len, self.n_units)
 
 
 
