@@ -272,15 +272,19 @@ class MultiHeadedAttention(nn.Module):
 
         self.Q = nn.Linear(self.n_units, self.n_units)
         nn.init.uniform(self.Q.weight, a=-k, b=k)
+        nn.init.uniform(self.Q.bias, a=-k, b=k)
 
         self.K = nn.Linear(self.n_units, self.n_units)
         nn.init.uniform(self.K.weight, a=-k, b=k)
+        nn.init.uniform(self.K.bias, a=-k, b=k)
 
         self.V = nn.Linear(self.n_units, self.n_units)
         nn.init.uniform(self.V.weight, a=-k, b=k)
+        nn.init.uniform(self.V.bias, a=-k, b=k)
 
         self.Out = nn.Linear(self.n_units, self.n_units)
         nn.init.uniform(self.Out.weight, a=-k, b=k)
+        nn.init.uniform(self.Out.bias, a=-k, b=k)
 
         
     def forward(self, query, key, value, mask=None):
@@ -302,8 +306,10 @@ class MultiHeadedAttention(nn.Module):
         s = torch.matmul(q, k_t) / math.sqrt(self.d_k)  # batch_size * n_heads * seq_length * seq_length
 
         if not mask:
-            mask = mask.unsqueeze(1)
+            mask = mask.unsqueeze(1) # (batch_size, 1, seq_len, seq_len)
             s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
+            # s = s * mask - 1e9 * (1 - mask)
+            # s.mul_(mask).diff_(1e9*(1-mask))
 
         s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
 
