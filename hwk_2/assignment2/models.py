@@ -309,7 +309,7 @@ class MultiHeadedAttention(nn.Module):
             mask = mask.unsqueeze(1).float() # (batch_size, 1, seq_len, seq_len)
             # s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
             # s = s * mask - 1e9 * (1 - mask)
-            s.mul_(mask).diff_(1e9*(1-mask))
+            s.mul_(mask).sub_(1e9*(1-mask))
 
         s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
         s = self.dropout(s)
