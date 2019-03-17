@@ -271,20 +271,20 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.Q = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform(self.Q.weight, a=-k, b=k)
-        nn.init.uniform(self.Q.bias, a=-k, b=k)
+        nn.init.uniform_(self.Q.weight, a=-k, b=k)
+        nn.init.uniform_(self.Q.bias, a=-k, b=k)
 
         self.K = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform(self.K.weight, a=-k, b=k)
-        nn.init.uniform(self.K.bias, a=-k, b=k)
+        nn.init.uniform_(self.K.weight, a=-k, b=k)
+        nn.init.uniform_(self.K.bias, a=-k, b=k)
 
         self.V = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform(self.V.weight, a=-k, b=k)
-        nn.init.uniform(self.V.bias, a=-k, b=k)
+        nn.init.uniform_(self.V.weight, a=-k, b=k)
+        nn.init.uniform_(self.V.bias, a=-k, b=k)
 
         self.Out = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform(self.Out.weight, a=-k, b=k)
-        nn.init.uniform(self.Out.bias, a=-k, b=k)
+        nn.init.uniform_(self.Out.weight, a=-k, b=k)
+        nn.init.uniform_(self.Out.bias, a=-k, b=k)
 
         
     def forward(self, query, key, value, mask=None):
@@ -305,22 +305,20 @@ class MultiHeadedAttention(nn.Module):
         k_t = k.transpose(-2, -1)  # batch_size * n_heads * d_k * seq_length
         s = torch.matmul(q, k_t) / math.sqrt(self.d_k)  # batch_size * n_heads * seq_length * seq_length
 
-        if not mask:
-            mask = mask.unsqueeze(1) # (batch_size, 1, seq_len, seq_len)
-            s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
+        if mask is not None:
+            mask = mask.unsqueeze(1).float() # (batch_size, 1, seq_len, seq_len)
+            # s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
             # s = s * mask - 1e9 * (1 - mask)
-            # s.mul_(mask).diff_(1e9*(1-mask))
+            s.mul_(mask).diff_(1e9*(1-mask))
 
         s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
-
-        if not self.dropout:
-            s = self.dropout(s)
+        s = self.dropout(s)
 
         s = torch.matmul(s, v)  # batch_size * n_heads * seq_length * d_k
 
         # batch_size * n_heads * seq_length * d_k  --> batch_size * seq_length * n_heads * d_k --> batch_size * seq_length * self.n_units
-        # concatenated_heads = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_units)
-        concatenated_heads = s.transpose(1, 2).view(batch_size, -1, self.n_units)
+        concatenated_heads = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_units)
+        # concatenated_heads = s.transpose(1, 2).view(batch_size, -1, self.n_units)
 
         output = self.Out(concatenated_heads)  # batch_size * seq_length * self.n_units
 
