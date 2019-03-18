@@ -311,7 +311,7 @@ class GRU(nn.Module):  # Implement a stacked GRU RNN
         self.recurrent_layers = clones(self.gru_layer, self.num_layers - 1)
         self.recurrent_layers.insert(0, self.input_layer)
 
-        self.init_weights()
+        self.init_weights_uniform()
 
     def init_weights_uniform(self):
         # TODO ========================
