@@ -268,23 +268,21 @@ class MultiHeadedAttention(nn.Module):
         k = np.sqrt(1.0 / n_units)
 
         self.n_heads = n_heads
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(p=dropout)
 
-        self.Q = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform_(self.Q.weight, a=-k, b=k)
-        nn.init.uniform_(self.Q.bias, a=-k, b=k)
+        self.Q_ll, self.K_ll, self.V_ll, self.Out_ll = clones(nn.Linear(n_units, n_units), 4)
 
-        self.K = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform_(self.K.weight, a=-k, b=k)
-        nn.init.uniform_(self.K.bias, a=-k, b=k)
+        nn.init.uniform_(self.Q_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.Q_ll.bias, a=-k, b=k)
 
-        self.V = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform_(self.V.weight, a=-k, b=k)
-        nn.init.uniform_(self.V.bias, a=-k, b=k)
+        nn.init.uniform_(self.K_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.K_ll.bias, a=-k, b=k)
 
-        self.Out = nn.Linear(self.n_units, self.n_units)
-        nn.init.uniform_(self.Out.weight, a=-k, b=k)
-        nn.init.uniform_(self.Out.bias, a=-k, b=k)
+        nn.init.uniform_(self.V_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.V_ll.bias, a=-k, b=k)
+
+        nn.init.uniform_(self.Out_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.Out_ll.bias, a=-k, b=k)
 
         
     def forward(self, query, key, value, mask=None):
@@ -297,33 +295,28 @@ class MultiHeadedAttention(nn.Module):
 
         batch_size = query.size(0)
 
-        q = self.Q(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
-        k = self.K(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
-        v = self.V(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        query = self.Q_ll(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        key   = self.K_ll(key).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        value = self.V_ll(value).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
 
         # perform attention
-        k_t = k.transpose(-2, -1)  # batch_size * n_heads * d_k * seq_length
-        s = torch.matmul(q, k_t) / math.sqrt(self.d_k)  # batch_size * n_heads * seq_length * seq_length
+        d_k = query.size(-1)
+        key_t = key.transpose(-2, -1)  # batch_size * n_heads * d_k * seq_length
+        s = torch.matmul(query, key_t) / math.sqrt(d_k) # batch_size * n_heads * seq_length * seq_length
 
         if mask is not None:
             mask = mask.unsqueeze(1).float() # (batch_size, 1, seq_len, seq_len)
-            # s.masked_fill_(mask == 0, -1e9)  # TODO: Revisit
-            # s = s * mask - 1e9 * (1 - mask)
-            s.mul_(mask).sub_(1e9*(1-mask))
+            s = s * mask - 1e9 * (1 - mask)
 
         s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
-        s = self.dropout(s)
 
-        s = torch.matmul(s, v)  # batch_size * n_heads * seq_length * d_k
+        if self.dropout is not None:
+            s = self.dropout(s)
 
-        # batch_size * n_heads * seq_length * d_k  --> batch_size * seq_length * n_heads * d_k --> batch_size * seq_length * self.n_units
-        concatenated_heads = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_units)
-        # concatenated_heads = s.transpose(1, 2).view(batch_size, -1, self.n_units)
-
-        output = self.Out(concatenated_heads)  # batch_size * seq_length * self.n_units
-
+        s = torch.matmul(s, value)
+        s = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_heads * self.d_k)
+        output = self.Out_ll(s)  # batch_size * seq_length * self.n_units
         return output  # size: (batch_size, seq_len, self.n_units)
-
 
 
 
