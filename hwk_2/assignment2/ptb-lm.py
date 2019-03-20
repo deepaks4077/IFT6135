@@ -382,8 +382,8 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         hidden = hidden.to(device)
     costs = 0.0
     iters = 0
-    losses = []
-
+    losses = torch.zero([model.seq_len], device=device)
+    loss_t = torch.zero([model.seq_len], device=device)
     # LOOP THROUGH MINIBATCHES
     for step, (x, y) in enumerate(ptb_iterator(data, model.batch_size, model.seq_len)):
         if args.model == 'TRANSFORMER':
@@ -407,7 +407,12 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         # at each time-step separately.
         loss = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
         costs += loss.data.item() * model.seq_len
-        losses.append(costs)
+
+        for t in range(outputs.shape[0]):
+            loss_t[t] = loss_fn(outputs[t], targets[t])
+
+        # costs += loss.data.item() * model.seq_len
+        losses = losses + 1 / (step + 1) * (loss_t - losses)
         iters += model.seq_len
         if args.debug:
             print(step, loss)
@@ -457,7 +462,7 @@ for epoch in range(num_epochs):
         lr = lr * lr_decay  # decay lr if it is time
 
     # RUN MODEL ON TRAINING DATA
-    train_ppl, train_loss = run_epoch(model, train_data, True, lr)
+    # train_ppl, train_loss = run_epoch(model, train_data, True, lr)
 
     # RUN MODEL ON VALIDATION DATA
     val_ppl, val_loss = run_epoch(model, valid_data)
