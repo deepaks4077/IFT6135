@@ -382,8 +382,8 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         hidden = hidden.to(device)
     costs = 0.0
     iters = 0
-    losses = torch.zero([model.seq_len], device=device)
-    loss_t = torch.zero([model.seq_len], device=device)
+    losses = torch.zeros([model.seq_len], device=device)
+    loss_t = torch.zeros([model.seq_len], device=device)
     # LOOP THROUGH MINIBATCHES
     for step, (x, y) in enumerate(ptb_iterator(data, model.batch_size, model.seq_len)):
         if args.model == 'TRANSFORMER':
