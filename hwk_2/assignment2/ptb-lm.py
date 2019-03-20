@@ -88,6 +88,7 @@ import torch.nn
 from torch.autograd import Variable
 import torch.nn as nn
 import numpy
+import pdb
 np = numpy
 
 # NOTE ==============================================
@@ -408,11 +409,12 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         loss = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
         costs += loss.data.item() * model.seq_len
 
-        for t in range(outputs.shape[0]):
-            loss_t[t] = loss_fn(outputs[t], targets[t])
+        with torch.no_grad():
+            for t in range(outputs.shape[0]):
+                loss_t[t] = loss_fn(outputs[t], targets[t])
 
-        # costs += loss.data.item() * model.seq_len
-        losses = losses + 1 / (step + 1) * (loss_t - losses)
+            # costs += loss.data.item() * model.seq_len
+            losses = losses + 1 / (step + 1) * (loss_t - losses)
         iters += model.seq_len
         if args.debug:
             print(step, loss)
