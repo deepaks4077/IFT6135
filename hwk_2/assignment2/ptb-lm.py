@@ -139,6 +139,7 @@ parser.add_argument('--dp_keep_prob', type=float, default=0.35,
 
 # Arguments that you may want to make use of / implement more code for
 parser.add_argument('--debug', action='store_true')
+parser.add_argument('--load', action='store_true')
 parser.add_argument('--save_dir', type=str, default='',
                     help='path to save the experimental config, logs, model \
                     This is automatically generated based on the command line \
@@ -331,6 +332,9 @@ elif args.model == 'TRANSFORMER':
 else:
     print("Model type not recognized.")
 
+if args.load is True:
+    model.load_state_dict(torch.load(os.path.join(args.model, 'best_params.pt')))
+
 model = model.to(device)
 
 # LOSS FUNCTION
@@ -485,13 +489,12 @@ for epoch in range(num_epochs):
         # model and run on the test data with batch_size=1
 
     # LOC RESULTS
-    train_ppls.append(train_ppl)
+    # train_ppls.append(train_ppl)
     val_ppls.append(val_ppl)
-    train_losses.extend(train_loss)
+    # train_losses.extend(train_loss)
     val_losses.extend(val_loss)
     times.append(time.time() - t0)
     log_str = 'epoch: ' + str(epoch) + '\t' \
-        + 'train ppl: ' + str(train_ppl) + '\t' \
         + 'val ppl: ' + str(val_ppl) + '\t' \
         + 'best val: ' + str(best_val_so_far) + '\t' \
         + 'time (s) spent in epoch: ' + str(times[-1])
@@ -502,9 +505,7 @@ for epoch in range(num_epochs):
 # SAVE LEARNING CURVES
 lc_path = os.path.join(args.save_dir, 'learning_curves.npy')
 print('\nDONE\n\nSaving learning curves to ' + lc_path)
-np.save(lc_path, {'train_ppls': train_ppls,
-                  'val_ppls': val_ppls,
-                  'train_losses': train_losses,
+np.save(lc_path, {'val_ppls': val_ppls,
                   'val_losses': val_losses,
                   'times': times})
 # NOTE ==============================================
