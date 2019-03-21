@@ -164,9 +164,12 @@ argsdict['code_file'] = sys.argv[0]
 # name for the experimental dir
 print("\n########## Setting Up Experiment ######################")
 flags = [flag.lstrip('--') for flag in sys.argv[1:]]
-experiment_path = os.path.join(args.save_dir + '_'.join([argsdict['model'],
-                                                         argsdict['optimizer']]
-                                                        + flags))
+if args.save_dir == '':
+    experiment_path = os.path.join(args.save_dir + '_'.join([argsdict['model'],
+                                                             argsdict['optimizer']]
+                                                            + flags))
+else:
+    experiment_path = args.save_dir
 
 # Increment a counter so that previous results with the same args will not
 # be overwritten. Comment out the next four lines if you only want to keep
@@ -333,6 +336,7 @@ else:
     print("Model type not recognized.")
 
 if args.load is True:
+    print('Loading model from ', args.save_dir)
     model.load_state_dict(torch.load(os.path.join(args.save_dir, 'best_params.pt')))
 
 model = model.to(device)
@@ -474,11 +478,11 @@ for epoch in range(num_epochs):
     val_ppl, val_loss = run_epoch(model, valid_data)
 
     # SAVE MODEL IF IT'S THE BEST SO FAR
-    if val_ppl < best_val_so_far:
-        best_val_so_far = val_ppl
-        if args.save_best:
-            print("Saving model parameters to best_params.pt")
-            torch.save(model.state_dict(), os.path.join(args.save_dir, 'best_params.pt'))
+    # if val_ppl < best_val_so_far:
+    #     best_val_so_far = val_ppl
+    #     if args.save_best:
+    #         print("Saving model parameters to best_params.pt")
+    #         torch.save(model.state_dict(), os.path.join(args.save_dir, 'best_params.pt'))
         # NOTE ==============================================
         # You will need to load these parameters into the same model
         # for a couple Problems: so that you can compute the gradient
