@@ -149,6 +149,8 @@ class RNN(nn.Module):  # Implement a stacked vanilla RNN with Tanh nonlinearitie
         self.recurrent_layers = clones(self.rnn_layer, self.num_layers - 1)
         self.recurrent_layers.insert(0, self.input_layer)
 
+        self.time_grad = []
+
         self.init_weights()
 
     def init_weights(self):
@@ -217,6 +219,7 @@ class RNN(nn.Module):  # Implement a stacked vanilla RNN with Tanh nonlinearitie
                 hidden_next.append(cur_t_out)
 
             hidden = torch.stack(hidden_next)
+            hidden.register_hook(lambda grad: self.time_grad.append(torch.norm(torch.mean(grad, dim=1), p=2)))
             # logits at the current time step are computed based on the output of the last layer of stacked RNN
             # logits[t] shape is [batch_size, vocab_size]
             logits[t] = self.output_layer(inp_x)
