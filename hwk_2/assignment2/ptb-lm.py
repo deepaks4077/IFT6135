@@ -483,20 +483,20 @@ for epoch in range(num_epochs):
     #     if args.save_best:
     #         print("Saving model parameters to best_params.pt")
     #         torch.save(model.state_dict(), os.path.join(args.save_dir, 'best_params.pt'))
-        # NOTE ==============================================
-        # You will need to load these parameters into the same model
-        # for a couple Problems: so that you can compute the gradient
-        # of the loss w.r.t. hidden state as required in Problem 5.2
-        # and to sample from the the model as required in Problem 5.3
-        # We are not asking you to run on the test data, but if you
-        # want to look at test performance you would load the saved
-        # model and run on the test data with batch_size=1
+    # NOTE ==============================================
+    # You will need to load these parameters into the same model
+    # for a couple Problems: so that you can compute the gradient
+    # of the loss w.r.t. hidden state as required in Problem 5.2
+    # and to sample from the the model as required in Problem 5.3
+    # We are not asking you to run on the test data, but if you
+    # want to look at test performance you would load the saved
+    # model and run on the test data with batch_size=1
 
     # LOC RESULTS
     # train_ppls.append(train_ppl)
     val_ppls.append(val_ppl)
     # train_losses.extend(train_loss)
-    val_losses.extend(val_loss)
+    val_losses.extend(val_loss.cpu())
     times.append(time.time() - t0)
     log_str = 'epoch: ' + str(epoch) + '\t' \
         + 'val ppl: ' + str(val_ppl) + '\t' \
