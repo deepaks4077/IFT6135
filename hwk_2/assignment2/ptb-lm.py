@@ -420,25 +420,25 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         with torch.no_grad():
             for t in range(outputs.shape[0]):
                 loss_t[t] = loss_fn(outputs[t], targets[t])
-
             # costs += loss.data.item() * model.seq_len
             losses = losses + 1 / (step + 1) * (loss_t - losses)
         iters += model.seq_len
         if args.debug:
             print(step, loss)
         if is_train:  # Only update parameters if training
-            loss_t[-1].backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.25)
-            if args.optimizer == 'ADAM':
-                optimizer.step()
-            else:
-                for p in model.parameters():
-                    if p.grad is not None:
-                        p.data.add_(-lr, p.grad.data)
-            if step % (epoch_size // 10) == 10:
-                print('step: ' + str(step) + '\t'
-                      + 'loss: ' + str(costs) + '\t'
-                      + 'speed (wps):' + str(iters * model.batch_size / (time.time() - start_time)))
+            loss_final = loss_fn(outputs[-1], targets[-1])
+            loss_final.backward()
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.25)
+            # if args.optimizer == 'ADAM':
+            #     optimizer.step()
+            # else:
+            #     for p in model.parameters():
+            #         if p.grad is not None:
+            #             p.data.add_(-lr, p.grad.data)
+            # if step % (epoch_size // 10) == 10:
+            #     print('step: ' + str(step) + '\t'
+            #           + 'loss: ' + str(costs) + '\t'
+            #           + 'speed (wps):' + str(iters * model.batch_size / (time.time() - start_time)))
         break
     return np.exp(costs / iters), losses
 
