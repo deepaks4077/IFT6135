@@ -178,7 +178,7 @@ experiment_path = experiment_path + "_" + str(i)
 
 # Creates an experimental directory and dumps all the args to a text file
 os.mkdir(experiment_path)
-print ("\nPutting log in %s" % experiment_path)
+print("\nPutting log in %s" % experiment_path)
 argsdict['save_dir'] = experiment_path
 with open(os.path.join(experiment_path, 'exp_config.txt'), 'w') as f:
     for key in sorted(argsdict):
@@ -333,7 +333,7 @@ else:
     print("Model type not recognized.")
 
 if args.load is True:
-    model.load_state_dict(torch.load(os.path.join(args.model, 'best_params.pt')))
+    model.load_state_dict(torch.load(os.path.join(args.save_dir, 'best_params.pt')))
 
 model = model.to(device)
 
