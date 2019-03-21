@@ -180,7 +180,7 @@ else:
 # experiment_path = experiment_path + "_" + str(i)
 
 # Creates an experimental directory and dumps all the args to a text file
-#os.mkdir(experiment_path)
+# os.mkdir(experiment_path)
 print("\nPutting log in %s" % experiment_path)
 argsdict['save_dir'] = experiment_path
 with open(os.path.join(experiment_path, 'exp_config.txt'), 'w') as f:
@@ -427,7 +427,7 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         if args.debug:
             print(step, loss)
         if is_train:  # Only update parameters if training
-            loss.backward()
+            loss_t[-1].backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 0.25)
             if args.optimizer == 'ADAM':
                 optimizer.step()
@@ -439,6 +439,7 @@ def run_epoch(model, data, is_train=False, lr=1.0):
                 print('step: ' + str(step) + '\t'
                       + 'loss: ' + str(costs) + '\t'
                       + 'speed (wps):' + str(iters * model.batch_size / (time.time() - start_time)))
+        break
     return np.exp(costs / iters), losses
 
 
@@ -472,10 +473,10 @@ for epoch in range(num_epochs):
         lr = lr * lr_decay  # decay lr if it is time
 
     # RUN MODEL ON TRAINING DATA
-    # train_ppl, train_loss = run_epoch(model, train_data, True, lr)
+    train_ppl, train_loss = run_epoch(model, train_data, True, lr)
 
     # RUN MODEL ON VALIDATION DATA
-    val_ppl, val_loss = run_epoch(model, valid_data)
+    # val_ppl, val_loss = run_epoch(model, valid_data)
 
     # SAVE MODEL IF IT'S THE BEST SO FAR
     # if val_ppl < best_val_so_far:
@@ -493,13 +494,13 @@ for epoch in range(num_epochs):
     # model and run on the test data with batch_size=1
 
     # LOC RESULTS
-    # train_ppls.append(train_ppl)
-    val_ppls.append(val_ppl)
-    # train_losses.extend(train_loss)
-    val_losses.extend(val_loss.cpu())
+    train_ppls.append(train_ppl)
+    # val_ppls.append(val_ppl)
+    train_losses.extend(train_loss)
+    # val_losses.extend(val_loss.cpu())
     times.append(time.time() - t0)
     log_str = 'epoch: ' + str(epoch) + '\t' \
-        + 'val ppl: ' + str(val_ppl) + '\t' \
+        + 'train ppl: ' + str(train_ppl) + '\t' \
         + 'best val: ' + str(best_val_so_far) + '\t' \
         + 'time (s) spent in epoch: ' + str(times[-1])
     print(log_str)
@@ -509,8 +510,11 @@ for epoch in range(num_epochs):
 # SAVE LEARNING CURVES
 lc_path = os.path.join(args.save_dir, 'learning_curves.npy')
 print('\nDONE\n\nSaving learning curves to ' + lc_path)
-np.save(lc_path, {'val_ppls': val_ppls,
-                  'val_losses': val_losses,
+np.save(lc_path, {'train_ppls': train_ppls,
+                  # 'val_ppls': val_ppls,
+                  'train_losses': train_losses,
+                  # 'val_losses': val_losses,
+                  'time_grad': model.time_grad,
                   'times': times})
 # NOTE ==============================================
 # To load these, run

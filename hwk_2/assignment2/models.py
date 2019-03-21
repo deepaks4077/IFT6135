@@ -311,6 +311,8 @@ class GRU(nn.Module):  # Implement a stacked GRU RNN
         self.recurrent_layers = clones(self.gru_layer, self.num_layers - 1)
         self.recurrent_layers.insert(0, self.input_layer)
 
+        self.time_grad = []
+
         self.init_weights_uniform()
 
     def init_weights_uniform(self):
@@ -332,6 +334,7 @@ class GRU(nn.Module):  # Implement a stacked GRU RNN
         logits = torch.zeros([self.seq_len, self.batch_size, self.vocab_size], device=inputs.device)
         embedded_inp = self.embedding_layer(inputs)
         embedded_inp = embedded_inp.view(self.seq_len, self.batch_size, self.emb_size)
+
         for t in range(self.seq_len):
             # x[t] shape is [batch_size, embedding_size]
             inp_x = embedded_inp[t]
@@ -344,6 +347,7 @@ class GRU(nn.Module):  # Implement a stacked GRU RNN
                 hidden_next.append(cur_t_out)
 
             hidden = torch.stack(hidden_next)
+            hidden.register_hook(lambda grad: self.time_grad.append(torch.norm(torch.mean(grad, dim=1), p=2)))
             # logits at the current time step are computed based on the output of the last layer of stacked RNN
             # logits[t] shape is [batch_size, vocab_size]
             logits[t] = self.output_layer(inp_x)
