@@ -494,9 +494,10 @@ for epoch in range(num_epochs):
     # model and run on the test data with batch_size=1
 
     # LOC RESULTS
+    pdb.set_trace()
     train_ppls.append(train_ppl)
     # val_ppls.append(val_ppl)
-    train_losses.extend(train_loss)
+    train_losses.extend(train_loss.cpu())
     # val_losses.extend(val_loss.cpu())
     times.append(time.time() - t0)
     log_str = 'epoch: ' + str(epoch) + '\t' \
