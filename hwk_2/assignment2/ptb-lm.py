@@ -176,7 +176,7 @@ experiment_path = experiment_path + "_" + str(i)
 
 # Creates an experimental directory and dumps all the args to a text file
 os.mkdir(experiment_path)
-print ("\nPutting log in %s" % experiment_path)
+print("\nPutting log in %s" % experiment_path)
 argsdict['save_dir'] = experiment_path
 with open(os.path.join(experiment_path, 'exp_config.txt'), 'w') as f:
     for key in sorted(argsdict):
@@ -405,7 +405,8 @@ def run_epoch(model, data, is_train=False, lr=1.0):
         # and all time-steps of the sequences.
         # For problem 5.3, you will (instead) need to compute the average loss
         # at each time-step separately.
-        loss = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
+        # loss = loss_fn(outputs.contiguous().view(-1, model.vocab_size), tt)
+        loss = loss_fn(outputs[-1], targets[-1])
         costs += loss.data.item() * model.seq_len
         losses.append(costs)
         iters += model.seq_len
@@ -424,6 +425,7 @@ def run_epoch(model, data, is_train=False, lr=1.0):
                 print('step: ' + str(step) + '\t'
                       + 'loss: ' + str(costs) + '\t'
                       + 'speed (wps):' + str(iters * model.batch_size / (time.time() - start_time)))
+        break
     return np.exp(costs / iters), losses
 
 
@@ -460,7 +462,7 @@ for epoch in range(num_epochs):
     train_ppl, train_loss = run_epoch(model, train_data, True, lr)
 
     # RUN MODEL ON VALIDATION DATA
-    val_ppl, val_loss = run_epoch(model, valid_data)
+    # val_ppl, val_loss = run_epoch(model, valid_data)
 
     # SAVE MODEL IF IT'S THE BEST SO FAR
     if val_ppl < best_val_so_far:

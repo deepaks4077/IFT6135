@@ -31,6 +31,10 @@ from torch.autograd import Variable
 # attention.
 
 
+def print_shape(a):
+    print(a.shape)
+
+
 def clones(module, N):
     '''
     A helper function for producing N identical layers (each with their own parameters).
@@ -344,6 +348,7 @@ class GRU(nn.Module):  # Implement a stacked GRU RNN
                 hidden_next.append(cur_t_out)
 
             hidden = torch.stack(hidden_next)
+            hidden.register_hook(print_shape)
             # logits at the current time step are computed based on the output of the last layer of stacked RNN
             # logits[t] shape is [batch_size, vocab_size]
             logits[t] = self.output_layer(inp_x)
