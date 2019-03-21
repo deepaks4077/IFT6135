@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import math, copy, time
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
+from torch.distributions.categorical import Categorical
 
 # NOTE ==============================================
 #
@@ -248,13 +249,32 @@ class RNN(nn.Module): # Implement a stacked vanilla RNN with Tanh nonlinearities
         - Sampled sequences of tokens
                     shape: (generated_seq_len, batch_size)
     """
-    samples = torch.zeros([generated_seq_len, self.batch_size], device=input.device)
-    for i in generated_seq_len:
-        logits, hidden = self.forward(input, hidden)
-        input = torch.argmax(nn.Softmax(logits))
-        samples[i] = input
-   
-    return samples
+    gen_samples = input.view(1, -1)
+    # embedded_inp shape is (1, batch_size, emb_size)
+    embedded_inp = self.embedding_layer(gen_samples)
+
+    for t in range(generated_seq_len):
+        inp_x = embedded_inp[0]  
+        hidden_next = []
+        for layer_no in range(self.num_layers):
+            cur_t_out = self.recurrent_layers[layer_no](inp_x, hidden[layer_no])
+            ## This is the input for next layer
+            inp_x = cur_t_out
+            ## next hidden state
+            hidden_next.append(cur_t_out)
+
+        hidden = torch.stack(hidden_next)
+        logits = self.output_layer(inp_x).detach()
+        # (batch_size, vocab_size)
+        softmax_probs = F.softmax(logits, dim=1)
+        out_idx = Categorical(probs=softmax_probs).sample()
+        # out_idx : (1, batch_size)
+        out_idx = out_idx.view(1, -1)
+
+        gen_samples = torch.cat((gen_samples, out_idx), dim=0)
+        embedded_inp = self.embedding_layer(out_idx)
+
+    return gen_samples
 
 
 # Problem 2
