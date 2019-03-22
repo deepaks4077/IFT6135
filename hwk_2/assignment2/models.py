@@ -428,11 +428,11 @@ class MultiHeadedAttention(nn.Module):
     def __init__(self, n_heads, n_units, dropout=0.1):
         """
         n_heads: the number of attention heads
-        n_units: the number of input and output units
+        n_units: the number of output units
         dropout: probability of DROPPING units
         """
         super(MultiHeadedAttention, self).__init__()
-        # This sets the size of the keys, values, and queries (self.d_k) to all
+        # This sets the size of the keys, values, and queries (self.d_k) to all 
         # be equal to the number of output units divided by the number of heads.
         self.d_k = n_units // n_heads
         # This requires the number of n_heads to evenly divide n_units.
@@ -442,21 +442,61 @@ class MultiHeadedAttention(nn.Module):
         # TODO: create/initialize any necessary parameters or layers
         # Initialize all weights and biases uniformly in the range [-k, k],
         # where k is the square root of 1/n_units.
-        # Note: the only Pytorch modules you are allowed to use are nn.Linear
+        # Note: the only Pytorch modules you are allowed to use are nn.Linear 
         # and nn.Dropout
-        # ETA: you can also use softmax
-        # ETA: you can use the "clones" function we provide.
 
+        k = np.sqrt(1.0 / n_units)
+
+        self.n_heads = n_heads
+        self.dropout = nn.Dropout(p=dropout)
+
+        self.Q_ll, self.K_ll, self.V_ll, self.Out_ll = clones(nn.Linear(n_units, n_units), 4)
+
+        nn.init.uniform_(self.Q_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.Q_ll.bias, a=-k, b=k)
+
+        nn.init.uniform_(self.K_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.K_ll.bias, a=-k, b=k)
+
+        nn.init.uniform_(self.V_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.V_ll.bias, a=-k, b=k)
+
+        nn.init.uniform_(self.Out_ll.weight, a=-k, b=k)
+        nn.init.uniform_(self.Out_ll.bias, a=-k, b=k)
+
+        
     def forward(self, query, key, value, mask=None):
         # TODO: implement the masked multi-head attention.
-        # query, key, and value correspond to Q, K, and V in the latex, and
-        # they all have size: (batch_size, seq_len, self.n_units)
+        # query, key, and value all have size: (batch_size, seq_len, self.n_units)
         # mask has size: (batch_size, seq_len, seq_len)
-        # As described in the .tex, apply input masking to the softmax
+        # As described in the .tex, apply input masking to the softmax 
         # generating the "attention values" (i.e. A_i in the .tex)
         # Also apply dropout to the attention values.
 
-        return  # size: (batch_size, seq_len, self.n_units)
+        batch_size = query.size(0)
+
+        query = self.Q_ll(query).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        key   = self.K_ll(key).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+        value = self.V_ll(value).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)  # batch_size * n_heads * seq_length * d_k
+
+        # perform attention
+        d_k = query.size(-1)
+        key_t = key.transpose(-2, -1)  # batch_size * n_heads * d_k * seq_length
+        s = torch.matmul(query, key_t) / math.sqrt(d_k) # batch_size * n_heads * seq_length * seq_length
+
+        if mask is not None:
+            mask = mask.unsqueeze(1).float() # (batch_size, 1, seq_len, seq_len)
+            s = s * mask - 1e9 * (1 - mask)
+
+        s = F.softmax(s, dim=-1)  # batch_size * n_heads * seq_length * seq_length
+
+        if self.dropout is not None:
+            s = self.dropout(s)
+
+        s = torch.matmul(s, value)
+        s = s.transpose(1, 2).contiguous().view(batch_size, -1, self.n_heads * self.d_k)
+        output = self.Out_ll(s)  # batch_size * seq_length * self.n_units
+        return output  # size: (batch_size, seq_len, self.n_units)
 
 
 #----------------------------------------------------------------------------------
