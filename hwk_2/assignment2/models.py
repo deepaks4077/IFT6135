@@ -49,13 +49,16 @@ def clones(module, N):
 
 
 class RNN_Hidden_Layer(nn.Module):
-    def __init__(self, input_size, hidden_size, p):
+    def __init__(self, input_size, hidden_size, p=0, act='tanh'):
         super(RNN_Hidden_Layer, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.drop_p = p
-        self.tanh = nn.Tanh()
+        if act == 'tanh':
+            self.activation = nn.Tanh()
+        if act == 'sigmoid':
+            self.activation = nn.Sigmoid()
 
         # embedding layer has no bias
         self.linear_x = nn.Linear(self.input_size, self.hidden_size, bias=False)
@@ -76,7 +79,7 @@ class RNN_Hidden_Layer(nn.Module):
         x = self.dropout(x)
         x = self.linear_x(x)
         h = self.linear_h(h)
-        out = self.tanh(x + h)
+        out = self.activation(x + h)
         return out
 
 
