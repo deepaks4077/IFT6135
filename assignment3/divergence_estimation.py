@@ -1,3 +1,4 @@
+import argparse
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -66,8 +67,8 @@ def train(model, phi):
     optimizer = optim.SGD(model.parameters(), lr=1e-3)
 
     for i in range(params.n_iter):
-        x_batch = torch.Tensor(next(iter(distribution1(0, params.batch_size))))
-        y_batch = torch.Tensor(next(iter(distribution1(phi, params.batch_size))))
+        x_batch = torch.Tensor(next(iter(distribution1(0, params.batch_size)))).to(device=params.device)
+        y_batch = torch.Tensor(next(iter(distribution1(phi, params.batch_size)))).to(device=params.device)
 
         loss = js_objective(model, x_batch, y_batch)
         optimizer.zero_grad()
