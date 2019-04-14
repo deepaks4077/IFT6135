@@ -29,6 +29,9 @@ if not params.disable_cuda and torch.cuda.is_available():
 else:
     params.device = torch.device('cpu')
 
+print('\n'.join('%s: %s' % (k, str(v)) for k, v
+                in sorted(dict(vars(params)).items())))
+
 
 class Model(nn.Module):
     def __init__(self, inp_dim, out_dim, n_hidden, n_layers):
@@ -58,7 +61,7 @@ class Model(nn.Module):
 
 
 def js_objective(model, x_batch, y_batch):
-    loss = torch.log(torch.Tensor([2])).to(device=params.device) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
+    loss = torch.log(torch.Tensor([2])) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
     return -loss
 
 
@@ -92,6 +95,7 @@ def main():
 
     js_estimate = []
     for phi in range(-10, 11, 1):
+        print('Running for phi = %f' % phi / 10)
         model.reset_params()
         train(model, phi / 10)
         js_estimate.append(js(model, phi / 10))
