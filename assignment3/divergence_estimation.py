@@ -95,7 +95,7 @@ def main():
 
     js_estimate = []
     for phi in range(-10, 11, 1):
-        print('Running for phi = %f' % phi / 10)
+        print('Running for phi = %f' % (phi / 10))
         model.reset_params()
         train(model, phi / 10)
         js_estimate.append(js(model, phi / 10))
