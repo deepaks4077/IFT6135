@@ -61,7 +61,7 @@ class Model(nn.Module):
 
 
 def js_objective(model, x_batch, y_batch):
-    loss = torch.log(torch.Tensor([2])) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
+    loss = torch.log(torch.Tensor([2])).to(device=params.device) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
     return -loss
 
 
