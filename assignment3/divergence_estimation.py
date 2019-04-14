@@ -8,8 +8,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from samplers import *
 
-N_ITER = 100000
-BATCH_SIZE = 512
+parser = argparse.ArgumentParser(description='TransE model')
+
+parser.add_argument("--gpu", type=int, default=0,
+                    help="Which GPU to use?")
+parser.add_argument("--n_iter", type=int, default=1000,
+                    help="No. if iterations to run the training loop for")
+parser.add_argument("--batch_size", type=int, default=512,
+                    help="Batch size of samples?")
+parser.add_argument('--disable-cuda', action='store_true',
+                    help='Disable CUDA')
+
+
+params = parser.parse_args()
+
+params.device = None
+if not params.disable_cuda and torch.cuda.is_available():
+    params.device = torch.device('cuda:%d' % params.gpu)
+else:
+    params.device = torch.device('cpu')
 
 
 class Model(nn.Module):
@@ -40,7 +57,7 @@ class Model(nn.Module):
 
 
 def js_objective(model, x_batch, y_batch):
-    loss = torch.log(torch.Tensor([2])) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
+    loss = torch.log(torch.Tensor([2])).to(device=params.device) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
     return -loss
 
 
@@ -48,9 +65,9 @@ def train(model, phi):
 
     optimizer = optim.SGD(model.parameters(), lr=1e-3)
 
-    for i in range(N_ITER):
-        x_batch = torch.Tensor(next(iter(distribution1(0, BATCH_SIZE))))
-        y_batch = torch.Tensor(next(iter(distribution1(phi, BATCH_SIZE))))
+    for i in range(params.n_iter):
+        x_batch = torch.Tensor(next(iter(distribution1(0, params.batch_size))))
+        y_batch = torch.Tensor(next(iter(distribution1(phi, params.batch_size))))
 
         loss = js_objective(model, x_batch, y_batch)
         optimizer.zero_grad()
@@ -60,8 +77,8 @@ def train(model, phi):
 
 def js(model, phi):
 
-    x_batch = torch.Tensor(next(iter(distribution1(0, 10000))))
-    y_batch = torch.Tensor(next(iter(distribution1(phi, 10000))))
+    x_batch = torch.Tensor(next(iter(distribution1(0, 1000)))).to(device=params.device)
+    y_batch = torch.Tensor(next(iter(distribution1(phi, 1000)))).to(device=params.device)
 
     with torch.no_grad():
         js_estimate = torch.log(torch.Tensor([2])) + 0.5 * torch.mean(torch.log(model(x_batch))) + 0.5 * torch.mean(torch.log(1 - model(y_batch)))
@@ -70,7 +87,7 @@ def js(model, phi):
 
 
 def main():
-    model = Model(2, 1, 32, 2)
+    model = Model(2, 1, 32, 2).to(device=params.device)
 
     js_estimate = []
     for phi in range(-10, 11, 1):
