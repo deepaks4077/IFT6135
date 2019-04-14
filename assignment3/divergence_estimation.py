@@ -1,3 +1,4 @@
+import time
 import argparse
 import matplotlib
 matplotlib.use('Agg')
@@ -95,9 +96,11 @@ def main():
 
     js_estimate = []
     for phi in range(-10, 11, 1):
-        print('Running for phi = %f' % (phi / 10))
+        tic = time.time()
         model.reset_params()
         train(model, phi / 10)
+        toc = time.time()
+        print('Running for phi = %f in %fs' % (phi / 10, toc - tic))
         js_estimate.append(js(model, phi / 10))
 
     fig = plt.figure(figsize=(15, 6))
