@@ -140,7 +140,7 @@ print('Completed run in %fs' % (toc - tic))
 # (2) plot the estimated density contrasted with the true density
 
 
-r = model(torch.Tensor(xx[:, np.newaxis])).detach().numpy()  # evaluate xx using your discriminator; replace xx with the output
+r = model(torch.Tensor(xx[:, np.newaxis]).to(device=params.device)).detach().cpu().numpy()  # evaluate xx using your discriminator; replace xx with the output
 fig = plt.figure(figsize=(8, 4))
 plt.subplot(1, 2, 1)
 plt.plot(xx, r)
