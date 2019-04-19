@@ -75,8 +75,7 @@ def wd_objective(model, x_batch, y_batch, a):
 
     out = model(z)
 
-    inp_grad = torch.autograd.grad(out, z, grad_outputs=torch.ones(out.shape),
-                                   retain_graph=True, create_graph=True, only_inputs=True, allow_unused=True)
+    inp_grad = torch.autograd.grad(out, z, grad_outputs=torch.ones(out.shape).to(device=params.device), retain_graph=True, create_graph=True, only_inputs=True, allow_unused=True)
 
     grad_penalty = torch.mean((torch.norm(inp_grad[0], dim=1) - 1)**2)
 
