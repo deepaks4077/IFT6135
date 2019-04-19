@@ -14,10 +14,13 @@ parser = argparse.ArgumentParser(description='TransE model')
 
 parser.add_argument("--gpu", type=int, default=0,
                     help="Which GPU to use?")
-parser.add_argument("--n_iter", type=int, default=1000,
+parser.add_argument("--n_iter", type=int, default=100000,
                     help="No. if iterations to run the training loop for")
 parser.add_argument("--batch_size", type=int, default=512,
                     help="Batch size of samples?")
+parser.add_argument("--lam", type=float, default=10,
+                    help="Gradient penalty weight.")
+
 parser.add_argument('--disable-cuda', action='store_true',
                     help='Disable CUDA')
 
@@ -66,6 +69,22 @@ def js_objective(model, x_batch, y_batch):
     return -loss
 
 
+def wd_objective(model, x_batch, y_batch, a):
+    z = a * x_batch + (1 - a) * y_batch
+    z.requires_grad = True
+
+    out = model(z)
+
+    inp_grad = torch.autograd.grad(out, z, grad_outputs=torch.ones(out.shape),
+                                   retain_graph=True, create_graph=True, only_inputs=True, allow_unused=True)
+
+    grad_penalty = torch.mean((torch.norm(inp_grad[0], dim=1) - 1)**2)
+
+    loss = torch.mean(model(x_batch)) - torch.mean(model(y_batch)) - params.lam * grad_penalty
+
+    return -loss
+
+
 def train(model, phi):
 
     optimizer = optim.SGD(model.parameters(), lr=1e-3)
@@ -73,8 +92,10 @@ def train(model, phi):
     for i in range(params.n_iter):
         x_batch = torch.Tensor(next(iter(distribution1(0, params.batch_size)))).to(device=params.device)
         y_batch = torch.Tensor(next(iter(distribution1(phi, params.batch_size)))).to(device=params.device)
+        a = torch.Tensor(np.random.uniform(0, 1, (params.batch_size, 1))).to(device=params.device)
 
-        loss = js_objective(model, x_batch, y_batch)
+        loss = wd_objective(model, x_batch, y_batch, a)
+        # loss = js_objective(model, x_batch, y_batch)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -91,22 +112,33 @@ def js(model, phi):
     return js_estimate
 
 
+def wd(model, phi):
+
+    x_batch = torch.Tensor(next(iter(distribution1(0, 1000)))).to(device=params.device)
+    y_batch = torch.Tensor(next(iter(distribution1(phi, 1000)))).to(device=params.device)
+
+    with torch.no_grad():
+        wd_estimate = torch.mean(model(x_batch)) - torch.mean(model(y_batch))
+
+    return wd_estimate
+
+
 def main():
     model = Model(2, 1, 32, 2).to(device=params.device)
 
-    js_estimate = []
+    wd_estimate = []
     for phi in range(-10, 11, 1):
         tic = time.time()
         model.reset_params()
         train(model, phi / 10)
         toc = time.time()
-        print('Running for phi = %f in %fs' % (phi / 10, toc - tic))
-        js_estimate.append(js(model, phi / 10))
+        print('Completed run for phi = %f in %fs' % (phi / 10, toc - tic))
+        wd_estimate.append(wd(model, phi / 10))
 
     fig = plt.figure(figsize=(15, 6))
     x = np.linspace(-1, 1, 21)
-    plt.plot(x, js_estimate, 'o-')
-    plt.savefig('js_estimate.png', dpi=fig.dpi)
+    plt.plot(x, wd_estimate, 'o-')
+    plt.savefig('wd_estimate.png', dpi=fig.dpi)
 
 
 if __name__ == '__main__':
