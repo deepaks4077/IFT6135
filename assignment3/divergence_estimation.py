@@ -60,7 +60,7 @@ class Model(nn.Module):
         for layer in self.layers[:-1]:
             z = layer(a)
             a = F.relu(z)
-        a = torch.sigmoid(self.layers[-1](a))
+        a = self.layers[-1](a)
         return a
 
 
