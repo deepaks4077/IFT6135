@@ -37,7 +37,11 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed (default: 1)')
 parser.add_argument('--randomize', action='store_true', default=False,
                     help='randomize pixel values according to Bernoulli(pixels) (default: False)')
-parser.add_argument('--imp-samples', type=int, default=20) 
+parser.add_argument('--imp-samples', type=int, default=20)
+parser.add_argument('--use-existing-model', action='store_true', default=False,
+                    help='Use the model specified by the option model-path')
+parser.add_argument('--model-path', type=str, default="saved_params/torch_new_bb_100_100_100_20_False_4",
+                    help='path to existing model params (default: torch_new_bb_100_100_100_20_False_4)')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -115,6 +119,9 @@ class BinaryVAE(nn.Module):
     def encode(self, x):
         h0 = self.encoder(x).view(-1, x.data.shape[0], 256)
         mu, logvar = self.fc11(h0), self.fc12(h0)
+        self.mu = mu
+        self.logvar = logvar
+
         return mu, logvar
 
     def decode(self, z):
@@ -144,72 +151,76 @@ class BinaryVAE(nn.Module):
         recon_x, z, mu, logvar = self.forward(x)
         dist = Bernoulli(recon_x.view(-1, 784))
 
-        BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction = 'sum')
+        BCE = F.binary_cross_entropy(recon_x.view(-1, 784), x.view(-1, 784), reduction = 'sum')
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) -  torch.exp(logvar), dim = 1)
 
-        res = torch.sum(KLD) + BCE
+        n_elbo = torch.sum(KLD) + BCE
 
-        return res
-
-    def calc_marginal(self, x, k):
-        mu, logvar = self.encode(x)
-        std = torch.exp(0.5*logvar)
-
-        q_z = Normal(mu.repeat((k,1,1)).view(x.shape[0], k, -1), torch.exp(logvar).repeat((k, 1, 1)).view(x.shape[0], k, -1))
-        zs = q_z.sample()
-        recon_xs = self.decode(zs)
-
-        p_xz = Bernoulli(recon_xs.view(x.data.shape[0], k, -1))
-        xs = x.view(1,-1).repeat((k, 1)).view(x.shape[0], k, -1)
-        log_pxs = p_xz.log_prob(xs)
-    
-        p_z = Normal(torch.zeros(x.data.shape[0], k, self.latent_dim).to(device), torch.ones(x.data.shape[0], k, self.latent_dim).to(device))
-
-        log_prior = p_z.log_prob(zs)
-        log_posterior = q_z.log_prob(zs)
-
-        logsum = torch.sum(log_pxs, dim = 2) + torch.sum(log_prior - log_posterior, dim = 2)
-
-        res = torch.logsumexp(logsum, dim = 1)
-
-        return res
-
-    def marginal(self, x, k):
-        mu, logvar = self.encode(x)
-
-        mu = mu.squeeze(0)
-        logvar = logvar.squeeze(0)
-        std = torch.exp(0.5*logvar)
-        batchsize = x.data.shape[0]
-        logsums = torch.empty((batchsize, 1)).to(device)
-
-        for i in range(k):
-            
-            q_z = Normal(mu, torch.exp(logvar))
-            zs = q_z.sample()
-            recon_xs = self.decode(zs)
-            p_xz = Bernoulli(recon_xs.view(batchsize, 784))
-
-            xs = x.view(batchsize, 784)
-            log_pxs = torch.sum(p_xz.log_prob(xs), dim = 1)
-        
-            p_z = Normal(torch.zeros(batchsize, self.latent_dim).to(device), torch.ones(batchsize, self.latent_dim).to(device))
-
-            log_prior = torch.sum(p_z.log_prob(zs), dim = 1)
-            log_posterior = torch.sum(q_z.log_prob(zs), dim = 1)
-
-            logsum = log_pxs + log_prior - log_posterior
-            logsums = torch.cat((logsums, logsum[:,None]), dim = 1)
-
-        logsums = logsums[:,1:]
-        res = torch.logsumexp(logsums, dim = 1)
-
-        return res
+        return n_elbo, mu, logvar
 
     def sample(self, n = 64):
         z = torch.randn(n, self.latent_dim).to(device)
         x_recon = self.decode(z)
         return x_recon
+
+def calc_marginal(model, x, zs, q_z):
+
+    k = zs.shape[1]
+    batchsize = x.data.shape[0]
+
+    #q_z = Normal(model.mu.repeat((k,1,1)).view(batchsize, k, -1), torch.exp(0.5*model.logvar).repeat((k, 1, 1)).view(batchsize, k, -1))
+    recon_xs = model.decode(zs)
+
+    p_xz = Bernoulli(recon_xs.view(batchsize, k, -1))
+    xs = x.view(1, batchsize, -1).repeat((k, 1, 1)).view(batchsize, k, -1)
+    log_pxs = p_xz.log_prob(xs).sum(dim = 2)
+
+    p_z = Normal(torch.zeros(batchsize, k, model.latent_dim).to(device), torch.ones(batchsize, k, model.latent_dim).to(device))
+
+    log_prior = p_z.log_prob(zs).sum(dim = 2)
+    log_posterior = q_z.log_prob(zs).sum(dim = 2)
+
+    logsum = log_pxs + log_prior - log_posterior
+
+    #res = torch.log(torch.exp(logsum).sum(dim = 1) / k)
+    print(f"log_prior = {log_prior.shape}, log_posterior = {log_posterior.shape}, logsum = {logsum.shape}, log_pxs = {log_pxs.shape}")
+    res = torch.logsumexp(logsum, dim = 1) - math.log(k)
+
+    return res
+
+def marginal(self, x, k):
+    mu, logvar = self.encode(x)
+
+    mu = mu.squeeze(0)
+    logvar = logvar.squeeze(0)
+    std = torch.exp(0.5*logvar)
+    batchsize = x.data.shape[0]
+    logsums = torch.empty((batchsize, 1)).to(device)
+    q_z = Normal(mu, torch.exp(logvar))
+
+    for i in range(k):  
+        zs = q_z.sample()
+        recon_xs = self.decode(zs)
+        p_xz = Bernoulli(recon_xs.view(batchsize, 784))
+
+        xs = x.view(batchsize, 784)
+        log_pxs = torch.sum(p_xz.log_prob(xs), dim = 1)
+    
+        p_z = Normal(torch.zeros(batchsize, self.latent_dim).to(device), torch.ones(batchsize, self.latent_dim).to(device))
+
+        log_prior = torch.sum(p_z.log_prob(zs), dim = 1)
+        log_posterior = torch.sum(q_z.log_prob(zs), dim = 1)
+
+        logsum = log_pxs + log_prior - log_posterior
+        logsums = torch.cat((logsums, logsum[:,None]), dim = 1)
+
+    logsums = logsums[:,1:]
+    #res = torch.log(torch.exp(logsums).sum(dim = 1) / k)
+    #print(res)
+    res = torch.logsumexp(logsums, dim = 1) - math.log(k)
+
+    return res
+
 
 def train(model, epoch, data_loader, optimizer, log_interval=10):
     model.train()
@@ -220,7 +231,7 @@ def train(model, epoch, data_loader, optimizer, log_interval=10):
         data = data.to(device)
         with autograd.detect_anomaly():
             optimizer.zero_grad()
-            loss = model.loss(data)
+            loss, _, _ = model.loss(data)
             train_loss += loss.item()
             loss /= data.shape[0]
             loss.backward()
@@ -247,12 +258,19 @@ def test(model, epoch, batch_size, num_imp_samples, data_loader):
     with torch.no_grad():
         for i, data in enumerate(data_loader):
             data = data.to(device)
-            loss = model.loss(data)
+            loss, mu, logvar = model.loss(data)
             test_loss += loss.item()
-            marginals = marginals + torch.sum(model.calc_marginal(data, num_imp_samples)).item()
+           
+            batchsize = data.data.shape[0]
+            q_z = Normal(mu.repeat((num_imp_samples,1,1)).view(batchsize, num_imp_samples, -1), torch.exp(0.5 * logvar).repeat(num_imp_samples, 1, 1).view(batchsize, num_imp_samples, -1))
+            zs = q_z.sample()
+            
+            ll_batch = calc_marginal(model, data, zs, q_z) 
+            marginals = marginals + torch.sum(ll_batch).item()
+            print(f"Log Likelihood of minibatch = {ll_batch.mean().item()}")
             num_samples += data.shape[0]
         
-    print("ELBO = {}, marginal probability = {}".format(-test_loss/num_samples, (marginals / num_samples) - math.log(num_imp_samples)))
+    print("ELBO = {}, marginal probability = {}".format(-test_loss/num_samples, marginals / num_samples))
 
 def get_data_loader(dataset_location, batch_size):
     URL = "http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/"
@@ -278,16 +296,26 @@ def get_data_loader(dataset_location, batch_size):
 
 
 def run():
+    
     model = BinaryVAE(784, 1, args.hidden_dim, args.latent_dim).to(device)
+
     optimizer = optim.Adam(model.parameters(), lr = 3*math.pow(10, args.learning_rate))
     train_loader, valid_loader, test_loader = get_data_loader("binarized_mnist", args.batch_size)
 
     try:
-        for epoch in range(1, args.epochs + 1):
-            train(model, epoch, train_loader, optimizer)
-        
-        test(model, epoch, args.batch_size, args.imp_samples, valid_loader)
-        test(model, epoch, args.batch_size, args.imp_samples, test_loader)
+        if args.use_existing_model:
+            print(f"Using existing model state dictionary from: {args.model_path}")
+            model.load_state_dict(torch.load(args.model_path))
+            test(model, 1, args.batch_size, args.imp_samples, valid_loader)
+            test(model, 1, args.batch_size, args.imp_samples, test_loader)
+        else:
+            for epoch in range(1, args.epochs + 1):
+                train(model, epoch, train_loader, optimizer)
+            
+            torch.save(model.state_dict(), 'saved_params/{}'.format(model_filename))
+            test(model, epoch, args.batch_size, args.imp_samples, valid_loader)
+            test(model, epoch, args.batch_size, args.imp_samples, test_loader)
+
     except KeyboardInterrupt:
         torch.save(model.state_dict(), 'saved_params/{}'.format(model_filename))
 
