@@ -70,49 +70,55 @@ Diss = Diss.to(device)
 
 
 def gen_samples(i):
-    #print("yay generating images")
     gen_images = generate_image(Gener, gen_rand_noise())
-    #print('gen images size ', gen_images.size())
     for it in range(gen_images.size(0)):
         print("saving "+str(it)+"\n")
-        torchvision.utils.save_image(gen_images[it], opt.output_path + "/gen_samples_t2/gen_sample_{}_{}.png".format(i, it))
+        torchvision.utils.save_image(gen_images[it], opt.output_path + "/gen_samples/gen_sample_{}_{}.png".format(i, it))
 
 def latent_image_space_interpolation():
-    print("doing latent space interpolation ..... ")
     alpha = np.arange(0,1.1,0.1)
     fixed_noise_1 = gen_rand_noise()
     fixed_noise_2 = gen_rand_noise()
-    #opt.batch_size = 1
+    l_tensor_list = []
+
     for it in range(len(alpha)):
         z_new = alpha[it] * fixed_noise_1 + (1-alpha[it]) * fixed_noise_2
-        gen_img = generate_image(Gener, z_new)
-        torchvision.utils.save_image(gen_img, opt.output_path + "/lsi_images/lsi_samples_{}.png".format(it))
+        g_img = generate_image(Gener, z_new)
+        l_tensor_list.append(torch.squeeze(g_img, dim=0))
 
-    print("\n")
-    print("doing image space interpolation .... ")
+    stacked_l = torch.stack(l_tensor_list)
+
+    torchvision.utils.save_image(stacked_l, opt.output_path + "/lsi_images_3/lsi_samples.png", nrow=11, padding=2)
+
     gen_img_fn1 = generate_image(Gener, fixed_noise_1)
     gen_img_fn2 = generate_image(Gener, fixed_noise_2)
+
+    i_tensor_list = []
     for it in range(len(alpha)):
         mod_img = alpha[it] * gen_img_fn1 + (1-alpha[it]) * gen_img_fn2
-        torchvision.utils.save_image(mod_img, opt.output_path + "/isi_images/isi_samples_{}.png".format(it))
+        i_tensor_list.append(torch.squeeze(mod_img, dim=0))
+
+    stacked_i = torch.stack(i_tensor_list)
+    torchvision.utils.save_image(stacked_i, opt.output_path + "/isi_images_3/isi_samples.png", nrow=11, padding=2)
 
 
 def study_disentanglement():
-    print("studying disentanglement...")
     pert = 4
     fixed_noise = gen_rand_noise()
     gen_img = generate_image(Gener, fixed_noise)
-    torchvision.utils.save_image(gen_img, opt.output_path + "/disentanglement_images/dis_sample_orig.png")
+    torchvision.utils.save_image(gen_img, opt.output_path + "/disentanglement_images_3/dis_sample_orig.png")
     for it in range(opt.latent_dim):
         mod_noise = copy.deepcopy(fixed_noise)
         mod_noise[0][it] += pert
         #if it == 0 or it == 1:
             #print("mod noise is ", mod_noise)
         gen_img = generate_image(Gener, mod_noise)
-        torchvision.utils.save_image(gen_img, opt.output_path + "/disentanglement_images/dis_sample_{}.png".format(it))
+        torchvision.utils.save_image(gen_img, opt.output_path + "/disentanglement_images_3/dis_sample_{}.png".format(it))
 
 # n_runs = int(1000/opt.batch_size) + 1
 # for i in range(n_runs):
-# 	gen_samples(i)
-#latent_image_space_interpolation()
-study_disentanglement()
+#     gen_samples(i)
+
+
+latent_image_space_interpolation()
+#study_disentanglement()
