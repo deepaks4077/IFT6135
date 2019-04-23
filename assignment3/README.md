@@ -1,3 +1,14 @@
+# For JSD and WD estimates:
+
+JSD: `python jsd_estimate.py`
+WD: `python wd_estimate.py`
+
+The required plots will be saved as `js_estimate.png` and `wd_estimate.png` respectively.
+
+# For density estimation:
+
+Run `python density_estimation.py`. The actual distributtion of point will be saved in `exact.png` and the estimate using optimal discriminator will be saved in `estimate.png`.
+
 # For Binary VAE:
 
 python >= 3.63
