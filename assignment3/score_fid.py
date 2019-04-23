@@ -93,8 +93,12 @@ def calculate_fid_score(sample_feature_iterator,
 
     diff_mu = mu_gens - mu_tests
     mu = (diff_mu).dot(diff_mu)
+
+    sigma_prod = np.matmul(sigma_gens, sigma_tests)
+
+    identity = np.identity(sigma_prod.shape[0])
      
-    trace_part = np.trace(sigma_gens + sigma_tests - 2*sp.linalg.sqrtm(np.matmul(sigma_gens, sigma_tests)).real)
+    trace_part = np.trace(sigma_gens + sigma_tests - 2*sp.linalg.sqrtm((sigma_prod+ 4e-9*identity)))
 
     fid_score = mu + trace_part
 
