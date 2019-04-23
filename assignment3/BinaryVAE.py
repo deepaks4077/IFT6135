@@ -157,7 +157,7 @@ class BinaryVAE(nn.Module):
         recon_x, z, mu, logvar = self.forward(x)
         dist = Bernoulli(recon_x.view(-1, 784))
 
-        BCE = self.BCEloss(recon_x.view(-1, 784), x.view(-1, 784)).sum()
+        BCE = dist.log_prob(x.view(-1, 784)).sum()
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) -  torch.exp(logvar), dim = 1)
 
         negative_elbo = torch.sum(KLD) - BCE
