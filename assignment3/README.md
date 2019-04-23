@@ -8,3 +8,6 @@ pytorch >= 1.00
 mkdir -p saved_params
 
 python BinaryVAE.py --epochs 20 --learning-rate -4 --batch-size 64 --imp-samples 200
+
+For VAE:
+python vae_clean.py --n_epochs 400 --batch_size 64 --optim_lr 2e-4
