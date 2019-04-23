@@ -5,6 +5,8 @@ import torchvision.transforms as transforms
 import torch
 import classify_svhn
 from classify_svhn import Classifier
+import scipy as sp
+import numpy as np
 
 SVHN_PATH = "svhn"
 PROCESS_BATCH_SIZE = 32
@@ -71,14 +73,37 @@ def extract_features(classifier, data_loader):
 
 
 def calculate_fid_score(sample_feature_iterator,
-                        testset_feature_iterator):
+                        testset_feature_iterator, n_samples):
     """
-    To be implemented by you!
+    Implementation of FID score. 
     """
-    raise NotImplementedError(
-        "TO BE IMPLEMENTED."
-        "Part of Assignment 3 Quantitative Evaluations"
-    )
+    # the feature vector is of size 512
+    gen_samples_feature = np.zeros((n_samples, 512))
+    testset_feature = np.zeros((n_samples, 512))
+
+    for e in range(n_samples):
+        gen_samples_feature[e, :] = next(sample_feature_iterator)
+        testset_feature[e, :] = next(testset_feature_iterator)
+
+    mu_gens = np.mean(gen_samples_feature, axis=0)
+    mu_tests = np.mean(testset_feature, axis=0)
+
+    sigma_gens = np.cov(gen_samples_feature, rowvar=False)
+    sigma_tests = np.cov(testset_feature, rowvar=False)
+
+    diff_mu = mu_gens - mu_tests
+    mu = (diff_mu).dot(diff_mu)
+
+    sigma_prod = np.matmul(sigma_gens, sigma_tests)
+
+    identity = np.identity(sigma_prod.shape[0])
+     
+    trace_part = np.trace(sigma_gens + sigma_tests - 2*sp.linalg.sqrtm((sigma_prod+ 4e-9*identity)))
+
+    fid_score = mu + trace_part
+
+    return fid_score
+
 
 
 if __name__ == "__main__":
@@ -110,5 +135,8 @@ if __name__ == "__main__":
     test_loader = get_test_loader(PROCESS_BATCH_SIZE)
     test_f = extract_features(classifier, test_loader)
 
-    fid_score = calculate_fid_score(sample_f, test_f)
+    n_samples = min(len(sample_loader.dataset), len(test_loader.dataset))
+
+    fid_score = calculate_fid_score(sample_f, test_f, n_samples)
     print("FID score:", fid_score)
+    print("\n")
